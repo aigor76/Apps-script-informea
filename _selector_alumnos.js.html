@@ -1,0 +1,224 @@
+<script>
+    let todosLosAlumnos = [];
+    let alumnosFiltrados = [];
+
+    function inicializar() {
+        console.log('📚 Inicializando selector de alumnos...');
+        cargarAlumnos();
+    }
+
+    function cargarAlumnos() {
+        mostrarCargando(true);
+
+        google.script.run
+            .withSuccessHandler(function(resultado) {
+                mostrarCargando(false);
+
+                if (resultado.success) {
+                    todosLosAlumnos = resultado.alumnos;
+                    alumnosFiltrados = [...todosLosAlumnos];
+
+                    if (todosLosAlumnos.length === 0) {
+                        mostrarEstadoVacio();
+                    } else {
+                        renderizarAlumnos();
+                        actualizarEstadisticas();
+                        mostrarEstado('success', `✅ ${todosLosAlumnos.length} alumnos cargados`);
+                    }
+                } else {
+                    mostrarEstado('error', resultado.message);
+                    mostrarEstadoVacio();
+                }
+            })
+            .withFailureHandler(function(error) {
+                mostrarCargando(false);
+                mostrarEstado('error', 'Error cargando alumnos: ' + error.message);
+                mostrarEstadoVacio();
+            })
+            .obtenerAlumnosConEstado();
+    }
+
+    function renderizarAlumnos() {
+        const grid = document.getElementById('alumnosGrid');
+        const emptyState = document.getElementById('emptyState');
+
+        if (alumnosFiltrados.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #5f6368;">
+                    <h3>🔍 No se encontraron alumnos</h3>
+                    <p>Intenta con otro término de búsqueda</p>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = '';
+        emptyState.style.display = 'none';
+
+        alumnosFiltrados.forEach(alumno => {
+            const card = document.createElement('div');
+            card.className = `alumno-card ${alumno.estado}`;
+
+            card.innerHTML = `
+                <div class="alumno-header">
+                    <div class="alumno-nombre">${alumno.nombre}</div>
+                    <div class="estado-badge ${alumno.estado}">
+                        ${alumno.icono} ${alumno.descripcion}
+                    </div>
+                </div>
+                <div class="alumno-descripcion">
+                    Estado: ${alumno.descripcion}
+                </div>
+                <div class="alumno-actions">
+                    <button class="btn-action btn-evaluar" onclick="abrirEvaluacion('${alumno.nombre}')">
+                        📊 Evaluar
+                    </button>
+                    <button class="btn-action btn-comedor" onclick="abrirComedor('${alumno.nombre}')">
+                        🏫 Comedor
+                    </button>
+                </div>
+            `;
+
+            grid.appendChild(card);
+        });
+    }
+
+    function filtrarAlumnos() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+
+        if (searchTerm === '') {
+            alumnosFiltrados = [...todosLosAlumnos];
+        } else {
+            alumnosFiltrados = todosLosAlumnos.filter(alumno =>
+                alumno.nombre.toLowerCase().includes(searchTerm)
+            );
+        }
+
+        renderizarAlumnos();
+    }
+
+    function actualizarEstadisticas() {
+        const stats = {
+            sin_empezar: 0,
+            parcial: 0,
+            terminado: 0
+        };
+
+        todosLosAlumnos.forEach(alumno => {
+            if (stats.hasOwnProperty(alumno.estado)) {
+                stats[alumno.estado]++;
+            }
+        });
+
+        document.getElementById('countSinEmpezar').textContent = stats.sin_empezar;
+        document.getElementById('countParcial').textContent = stats.parcial;
+        document.getElementById('countTerminado').textContent = stats.terminado;
+        document.getElementById('countTotal').textContent = todosLosAlumnos.length;
+    }
+
+    function abrirEvaluacion(nombreAlumno) {
+        mostrarEstado('info', `📊 Configurando evaluación para ${nombreAlumno}...`);
+
+        google.script.run
+            .withSuccessHandler(function(resultado) {
+                if (resultado.success) {
+                    mostrarEstado('success', resultado.message);
+                    // El modal se abrirá automáticamente desde el server
+                    cerrarModal();
+                } else {
+                    mostrarEstado('error', resultado.message);
+                }
+            })
+            .withFailureHandler(function(error) {
+                mostrarEstado('error', 'Error: ' + error.message);
+            })
+            .establecerAlumnoActivoYAbrir(nombreAlumno);
+    }
+
+    function abrirComedor(nombreAlumno) {
+        console.log('🏫 Iniciando apertura de comedor para:', nombreAlumno);
+        mostrarEstado('info', `🏫 Configurando comedor para ${nombreAlumno}...`);
+
+        // Primer paso: Solo establecer el alumno activo
+        google.script.run
+            .withSuccessHandler(function(resultado) {
+                console.log('✅ Resultado establecer alumno:', resultado);
+
+                if (resultado.success) {
+                    mostrarEstado('success', `✅ ${nombreAlumno} seleccionado para comedor`);
+
+                    // Segundo paso: Abrir Jangela ANTES de cerrar
+                    console.log('🔄 Abriendo modal Jangela...');
+
+                    google.script.run
+                        .withSuccessHandler(function(resultadoJangela) {
+                            console.log('✅ Jangela abierto, cerrando selector...');
+                            // Cerrar selector solo después de que Jangela esté abierto
+                            google.script.host.close();
+                        })
+                        .withFailureHandler(function(error) {
+                            console.error('❌ ERROR abriendo Jangela:', error);
+                            mostrarEstado('error', 'Error abriendo Jangela: ' + error.message);
+                        })
+                        .abrirModalJangela();
+
+                } else {
+                    console.error('❌ Error estableciendo alumno:', resultado.message);
+                    mostrarEstado('error', resultado.message);
+                }
+            })
+            .withFailureHandler(function(error) {
+                console.error('❌ Error en establecerAlumnoActivo:', error);
+                mostrarEstado('error', 'Error: ' + error.message);
+            })
+            .establecerAlumnoActivo(nombreAlumno);
+    }
+
+    function actualizarLista() {
+        console.log('🔄 Actualizando lista de alumnos...');
+        cargarAlumnos();
+    }
+
+    function abrirConfiguracion() {
+        google.script.run.abrirConfiguracionInicial();
+        cerrarModal();
+    }
+
+    function mostrarCargando(mostrar) {
+        const loadingState = document.getElementById('loadingState');
+        if (mostrar) {
+            loadingState.style.display = 'block';
+            document.getElementById('alumnosGrid').style.display = 'grid';
+            document.getElementById('emptyState').style.display = 'none';
+        } else {
+            loadingState.style.display = 'none';
+        }
+    }
+
+    function mostrarEstadoVacio() {
+        document.getElementById('alumnosGrid').innerHTML = '';
+        document.getElementById('emptyState').style.display = 'block';
+
+        // Limpiar estadísticas
+        document.getElementById('countSinEmpezar').textContent = '0';
+        document.getElementById('countParcial').textContent = '0';
+        document.getElementById('countTerminado').textContent = '0';
+        document.getElementById('countTotal').textContent = '0';
+    }
+
+    function mostrarEstado(tipo, mensaje) {
+        const status = document.getElementById('status');
+        status.className = `status ${tipo} show`;
+        status.textContent = mensaje;
+
+        setTimeout(() => {
+            status.classList.remove('show');
+        }, 5000);
+    }
+
+    function cerrarModal() {
+        google.script.host.close();
+    }
+
+    window.onload = inicializar;
+</script>

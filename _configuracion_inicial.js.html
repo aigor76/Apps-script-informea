@@ -1,0 +1,208 @@
+<script>
+    let claseSeleccionada = null;
+    let alumnosActuales = [];
+
+    function inicializar() {
+        console.log('⚙️ Inicializando configuración...');
+        cargarClasesDisponibles();
+
+        // Configurar eventos de validación
+        ['nombreTutor', 'cursoEscolar', 'curso', 'evaluacion'].forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('input', validarFormulario);
+                input.addEventListener('change', validarFormulario);
+            }
+        });
+    }
+
+    function cargarClasesDisponibles() {
+        google.script.run
+            .withSuccessHandler(function(resultado) {
+                const selector = document.getElementById('selectorClase');
+
+                if (resultado.success) {
+                    selector.innerHTML = '<option value="">-- Selecciona tu clase --</option>';
+
+                    resultado.clases.forEach(clase => {
+                        const option = document.createElement('option');
+                        option.value = clase.nombre;
+                        option.textContent = clase.nombre;
+                        selector.appendChild(option);
+                    });
+
+                    console.log(`📚 ${resultado.clases.length} pestañas cargadas del documento público`);
+                    mostrarEstado('success', `📋 ${resultado.totalHojas || resultado.clases.length} pestañas disponibles del documento público`);
+                } else {
+                    selector.innerHTML = '<option value="">❌ Error cargando clases</option>';
+                    mostrarEstado('error', resultado.message);
+                }
+            })
+            .withFailureHandler(function(error) {
+                document.getElementById('selectorClase').innerHTML = '<option value="">❌ Error de conexión</option>';
+                mostrarEstado('error', 'Error conectando al documento público: ' + error.message);
+            })
+            .obtenerClasesDisponibles();
+    }
+
+    function cargarVistaPrevia() {
+        const selector = document.getElementById('selectorClase');
+        claseSeleccionada = selector.value;
+
+        if (!claseSeleccionada) {
+            ocultarVistaPrevia();
+            return;
+        }
+
+        mostrarEstado('info', `🔄 Cargando alumnos de "${claseSeleccionada}"...`);
+
+        google.script.run
+            .withSuccessHandler(function(resultado) {
+                if (resultado.success) {
+                    alumnosActuales = resultado.alumnos;
+                    mostrarVistaPrevia(resultado);
+                    validarFormulario();
+
+                    let mensaje = `👥 ${resultado.alumnos.length} alumnos encontrados`;
+                    if (resultado.duplicadosEliminados > 0) {
+                        mensaje += ` (${resultado.duplicadosEliminados} duplicados eliminados)`;
+                    }
+                    mostrarEstado('success', mensaje);
+                } else {
+                    mostrarEstado('error', resultado.message);
+                    ocultarVistaPrevia();
+                }
+            })
+            .withFailureHandler(function(error) {
+                mostrarEstado('error', 'Error cargando alumnos: ' + error.message);
+                ocultarVistaPrevia();
+            })
+            .obtenerAlumnosClase(claseSeleccionada);
+    }
+
+    function mostrarVistaPrevia(resultado) {
+        const previewSection = document.getElementById('previewSection');
+        const alumnosPreview = document.getElementById('alumnosPreview');
+
+        alumnosPreview.innerHTML = '';
+        resultado.alumnos.slice(0, 10).forEach((alumno, index) => {
+            const item = document.createElement('div');
+            item.className = 'alumno-preview';
+            item.textContent = `${index + 1}. ${alumno}`;
+            alumnosPreview.appendChild(item);
+        });
+
+        if (resultado.alumnos.length > 10) {
+            const item = document.createElement('div');
+            item.className = 'alumno-preview';
+            item.style.fontStyle = 'italic';
+            item.style.color = '#5f6368';
+            item.textContent = `... y ${resultado.alumnos.length - 10} más`;
+            alumnosPreview.appendChild(item);
+        }
+
+        previewSection.style.display = 'block';
+    }
+
+    function ocultarVistaPrevia() {
+        document.getElementById('previewSection').style.display = 'none';
+        alumnosActuales = [];
+        validarFormulario();
+    }
+
+    function validarFormulario() {
+        const nombreTutor = document.getElementById('nombreTutor').value.trim();
+        const cursoEscolar = document.getElementById('cursoEscolar').value.trim();
+        const curso = document.getElementById('curso').value.trim();
+        const evaluacion = document.getElementById('evaluacion').value.trim();
+
+        const datosCompletos = nombreTutor && cursoEscolar && curso && evaluacion && claseSeleccionada && alumnosActuales.length > 0;
+
+        document.getElementById('btnCrear').disabled = !datosCompletos;
+        return datosCompletos;
+    }
+
+    function crearHojasAlumnos() {
+        if (!validarFormulario()) {
+            mostrarEstado('error', '⚠️ Completa todos los campos obligatorios');
+            return;
+        }
+
+        const datosConfiguracion = {
+            nombreTutor: document.getElementById('nombreTutor').value.trim(),
+            cursoEscolar: document.getElementById('cursoEscolar').value.trim(),
+            curso: document.getElementById('curso').value.trim(),
+            evaluacion: document.getElementById('evaluacion').value.trim()
+        };
+
+        const btnCrear = document.getElementById('btnCrear');
+        btnCrear.disabled = true;
+        btnCrear.innerHTML = '<div class="loading"><div class="spinner"></div>Creando hojas...</div>';
+
+        mostrarEstado('info', `🚀 Creando hojas para ${alumnosActuales.length} alumnos...`);
+
+        google.script.run
+            .withSuccessHandler(function(resultado) {
+                if (resultado.success) {
+                    let mensaje = `✅ Proceso completado!\n`;
+                    mensaje += `📁 Hojas creadas: ${resultado.hojasCreadas}\n`;
+                    mensaje += `📄 Ya existían: ${resultado.hojasExistentes}\n`;
+
+                    if (resultado.errores > 0) {
+                        mensaje += `❌ Errores: ${resultado.errores}\n`;
+                    }
+
+                    mensaje += `👥 Total alumnos: ${resultado.totalAlumnos}\n`;
+                    mensaje += `📚 Clase: ${resultado.clase}\n`;
+                    mensaje += `📊 Evaluación: ${datosConfiguracion.evaluacion}`;
+
+                    mostrarEstado('success', mensaje);
+
+                    // Habilitar botón de siguiente paso
+                    document.getElementById('btnSiguiente').disabled = false;
+
+                    // Mostrar advertencia si hay hojas existentes
+                    if (resultado.hojasExistentes > 0) {
+                        document.getElementById('warningExistentes').style.display = 'block';
+                    }
+
+                } else {
+                    mostrarEstado('error', resultado.message);
+                }
+
+                btnCrear.disabled = false;
+                btnCrear.textContent = '🚀 Crear Hojas de Alumnos';
+            })
+            .withFailureHandler(function(error) {
+                mostrarEstado('error', 'Error creando hojas: ' + error.message);
+                btnCrear.disabled = false;
+                btnCrear.textContent = '🚀 Crear Hojas de Alumnos';
+            })
+            .crearHojasAlumnos(claseSeleccionada, datosConfiguracion);
+    }
+
+    function abrirSelectorAlumnos() {
+        // Cerrar este modal y abrir el selector
+        google.script.run
+            .withSuccessHandler(function() {
+                google.script.host.close();
+            })
+            .abrirSelectorAlumnos();
+    }
+
+    function mostrarEstado(tipo, mensaje) {
+        const status = document.getElementById('status');
+        status.className = `status ${tipo} show`;
+        status.textContent = mensaje;
+
+        setTimeout(() => {
+            status.classList.remove('show');
+        }, 6000);
+    }
+
+    function cerrarModal() {
+        google.script.host.close();
+    }
+
+    window.onload = inicializar;
+</script>

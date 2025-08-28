@@ -1,965 +1,171 @@
 <!DOCTYPE html>
 <html>
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <style>
-     * { margin: 0; padding: 0; box-sizing: border-box; }
-     body { font-family: 'Google Sans', 'Segoe UI', Arial, sans-serif; background: #f8f9fa; color: #202124; height: 100vh; overflow: hidden; }
-     .main-container { width: 100%; height: 100vh; display: flex; flex-direction: column; background: white; }
-     .header { background: linear-gradient(135deg, #4285f4, #34a853); color: white; padding: 2px 6px; text-align: center; }
-     .header h1 { margin-bottom: 0; font-size: 0.8em; font-weight: 500; }
-     .header p { opacity: 0.95; font-size: 0.6em; margin: 0; }
-   
-     /* Selector de ámbito */
-     .ambito-selector { background: #e8f0fe; border-bottom: 1px solid #4285f4; padding: 4px 8px; display: flex; align-items: center; gap: 6px; }
-     .ambito-selector label { font-weight: 600; color: #1a73e8; font-size: 0.7em; }
-     .ambito-selector select { padding: 3px 6px; border: 1px solid #4285f4; border-radius: 3px; font-size: 0.7em; background: white; flex: 1; max-width: 250px; }
-     .ambito-selector select:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.1); }
-     .ambito-selector .loading-indicator { color: #1a73e8; font-size: 0.6em; display: none; }
-     .ambito-selector .loading-indicator.show { display: block; }
-   
-     .tabs { display: flex; background: #f1f3f4; border-bottom: 1px solid #dadce0; }
-     .tab { flex: 1; padding: 4px 8px; background: none; border: none; cursor: pointer; font-size: 0.75em; font-weight: 600; color: #5f6368; transition: all 0.3s ease; border-bottom: 2px solid transparent; }
-     .tab:hover { background: #e8eaed; color: #202124; }
-     .tab.active { background: white; color: #4285f4; border-bottom-color: #4285f4; }
-     .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-     .tab-content.active { display: flex; }
-   
-     .content { flex: 1; padding: 3px 6px; display: flex; flex-direction: column; overflow: hidden; }
-     .info-section { background: #e8f0fe; border-left: 2px solid #4285f4; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
-     .selection-count { font-weight: 600; color: #1a73e8; font-size: 0.7em; }
-     .selection-desc { color: #5f6368; font-size: 0.6em; }
-     .warning { background: #fef7e0; color: #f9ab00; padding: 2px 4px; border-radius: 2px; margin-bottom: 2px; border-left: 2px solid #fbbc04; font-weight: 500; display: none; font-size: 0.65em; }
-     .warning.show { display: block; }
-     .selected-preview { background: #f8f9fa; border: 1px solid #dadce0; border-radius: 3px; padding: 2px 4px; margin-bottom: 2px; min-height: 15px; max-height: 40px; overflow-y: auto; }
-     .selected-preview h3 { color: #202124; margin-bottom: 1px; font-size: 0.65em; font-weight: 600; }
-     .selected-item { display: inline-flex; align-items: center; background: #4285f4; color: white; padding: 1px 2px; border-radius: 4px; margin: 1px; font-size: 0.55em; gap: 1px; box-shadow: 0 1px 2px rgba(66, 133, 244, 0.3); }
-     .selected-item .remove-btn { cursor: pointer; font-weight: bold; padding: 0px 1px; border-radius: 50%; transition: background 0.2s ease; font-size: 0.9em; line-height: 1; }
-     .selected-item .remove-btn:hover { background: rgba(255,255,255,0.2); }
-     .criteria-list { flex: 1; border: 1px solid #dadce0; border-radius: 3px; overflow: hidden; margin-bottom: 2px; }
-     .criteria-scroll { height: 100%; overflow-y: auto; padding: 2px; }
-     .criteria-item { background: white; border: 1px solid #e1e8ed; border-radius: 3px; padding: 3px 4px; margin-bottom: 1px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: flex-start; gap: 4px; border-left-width: 4px; }
-     /* 
-📋 COPIA DESDE AQUÍ 👇 (LÍNEAS 48-110 del artifact)
-===============================================
-*/
-
-/* 🎯 COLORES DE NIVEL - PRIMERO CON !IMPORTANT PARA PRESERVAR VERDE/AMARILLO/NARANJA */
-.criteria-item.nivel-1 { border-left-color: #34a853 !important; }
-.criteria-item.nivel-2 { border-left-color: #fbbc04 !important; }
-.criteria-item.nivel-3 { border-left-color: #ff6d01 !important; }
-
-/* GRUPO A - Fondo blanco puro con sombra sutil */
-.criteria-item.grupo-a { 
-    background: #ffffff; 
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    /* NO tocar border-left-color aquí */
-}
-
-/* GRUPO B - Fondo azul muy claro con borde SOLO en right, top, bottom */
-.criteria-item.grupo-b { 
-    background: #E0FFE9; 
-    /* Solo cambiar los bordes que NO son el izquierdo */
-    border-right-color: #c8d6f5;
-    border-top-color: #c8d6f5;
-    border-bottom-color: #c8d6f5;
-    box-shadow: 0 1px 3px rgba(66, 133, 244, 0.1);
-}
-
-/* Efectos hover mejorados con transformación */
-.criteria-item.grupo-a:hover { 
-    background: #f8f9fa; 
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    transform: translateY(-1px);
-}
-
-.criteria-item.grupo-b:hover { 
-    background: #e3f2fd; 
-    box-shadow: 0 2px 6px rgba(66, 133, 244, 0.15);
-    transform: translateY(-1px);
-    /* Mantener solo los bordes no-izquierdos en hover */
-    border-right-color: #a5b8e8;
-    border-top-color: #a5b8e8;
-    border-bottom-color: #a5b8e8;
-}
-
-/* Estados seleccionados con mayor contraste y bordes gruesos */
-.criteria-item.selected { 
-    border-right-color: #4285f4; 
-    border-top-color: #4285f4; 
-    border-bottom-color: #4285f4; 
-    /* NO cambiar border-left-color - mantener el color del nivel */
-    box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
-    transform: translateY(-1px);
-}
-
-.criteria-item.selected.grupo-a { 
-    background: #fff3e0; 
-    border-right-width: 2px;
-    border-top-width: 2px;
-    border-bottom-width: 2px;
-    /* border-left-width se mantiene en 4px del CSS original */
-}
-
-.criteria-item.selected.grupo-b { 
-    background: #fff3e0; 
-    border-right-width: 2px;
-    border-top-width: 2px;
-    border-bottom-width: 2px;
-    /* border-left-width se mantiene en 4px del CSS original */
-}
-.criteria-item.grupo-a:nth-child(3n) {
-    margin-bottom: 12px;
-}
-.criteria-item.grupo-b:nth-child(3n) {
-    margin-bottom: 12px;
-}
-     .checkbox { width: 10px; height: 10px; border: 1px solid #dadce0; border-radius: 2px; display: flex; align-items: center; justify-content: center; background: white; flex-shrink: 0; margin-top: 1px; transition: all 0.2s ease; position: relative; }
-     .criteria-item.selected .checkbox { background: #4285f4; border-color: #4285f4; }
-     .checkbox::after { content: "✓"; color: white; font-size: 7px; font-weight: bold; opacity: 0; transition: opacity 0.2s ease; }
-     .criteria-item.selected .checkbox::after { opacity: 1; }
-     .criteria-content { flex: 1; }
-     .criteria-text { line-height: 1.1; color: #3c4043; font-size: 0.7em; }
-     .footer { background: #f8f9fa; padding: 2px 6px; border-top: 1px solid #dadce0; display: flex; justify-content: space-between; align-items: center; gap: 4px; }
-     .footer-info { color: #5f6368; font-size: 0.55em; flex: 1; line-height: 1.1; }
-     .button-group { display: flex; gap: 3px; }
-     .btn { padding: 3px 6px; border: none; border-radius: 3px; font-size: 0.7em; font-weight: 500; cursor: pointer; transition: all 0.2s ease; min-width: 45px; }
-     .btn-cancel { background: #f8f9fa; color: #5f6368; border: 1px solid #dadce0; }
-     .btn-cancel:hover { background: #f1f3f4; border-color: #9aa0a6; }
-     .btn-primary { background: #4285f4; color: white; box-shadow: 0 1px 3px rgba(66, 133, 244, 0.3); }
-     .btn-primary:hover { background: #3367d6; box-shadow: 0 2px 6px rgba(66, 133, 244, 0.4); }
-     .btn-primary:disabled { background: #dadce0; color: #9aa0a6; cursor: not-allowed; box-shadow: none; }
-     .loading { display: flex; align-items: center; justify-content: center; padding: 30px; color: #5f6368; font-size: 1em; }
-     .status { padding: 10px 15px; border-radius: 6px; margin: 10px 0; font-weight: 500; display: none; font-size: 0.9em; }
-     .status.success { background: #e6f4ea; color: #137333; border-left: 4px solid #34a853; }
-     .status.error { background: #fce8e6; color: #d93025; border-left: 4px solid #ea4335; }
-     .empty-state { text-align: center; padding: 30px; color: #5f6368; font-size: 0.95em; }
-     .criteria-scroll::-webkit-scrollbar { width: 6px; }
-     .criteria-scroll::-webkit-scrollbar-track { background: #f1f3f4; border-radius: 3px; }
-     .criteria-scroll::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 3px; }
-     .criteria-scroll::-webkit-scrollbar-thumb:hover { background: #9aa0a6; }
- </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?!= HtmlService.createHtmlOutputFromFile('_modal.css.html').getContent(); ?>
 </head>
 <body>
- <div class="main-container">
-     <div class="header">
-         <h1>🔧 Mendialdea IPIn HHko txostena betetzeko programa 🏔️☀️⛰️🧒🏽</h1>
-         <p id="headerSubtitle">Aldi akademikoen ebaluazio sistema</p>
-     </div>
+    <div class="main-container">
+        <div class="header">
+            <h1>🔧 Mendialdea IPIn HHko txostena betetzeko programa 🏔️☀️⛰️🧒🏽</h1>
+            <p id="headerSubtitle">Aldi akademikoen ebaluazio sistema</p>
+        </div>
 
-     <!-- Selector de ámbito -->
-     <div class="ambito-selector">
-         <button onclick="cambiarAmbitoAnterior()" id="btnAnterior" disabled style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 3px; padding: 3px 6px; font-size: 0.6em; color: #5f6368; cursor: pointer; margin-right: 6px;">
-             ◀ Anterior
-         </button>
-         <label for="selectorAmbito">🎯 Aukeratu esparrua:</label>
-         <select id="selectorAmbito">
-             <option value="">-- Aukeratu esparru bat  --</option>
-         </select>
-         <button onclick="cambiarAmbitoSiguiente()" id="btnSiguiente" disabled style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 3px; padding: 3px 6px; font-size: 0.6em; color: #5f6368; cursor: pointer; margin-left: 6px;">
-             Siguiente ▶
-         </button>
-         <div class="loading-indicator" id="ambitoLoading">🔄 Kargatzen...</div>
-     </div>
+        <!-- Selector de ámbito -->
+        <div class="ambito-selector">
+            <button onclick="cambiarAmbitoAnterior()" id="btnAnterior" disabled style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 3px; padding: 3px 6px; font-size: 0.6em; color: #5f6368; cursor: pointer; margin-right: 6px;">
+                ◀ Anterior
+            </button>
+            <label for="selectorAmbito">🎯 Aukeratu esparrua:</label>
+            <select id="selectorAmbito">
+                <option value="">-- Aukeratu esparru bat  --</option>
+            </select>
+            <button onclick="cambiarAmbitoSiguiente()" id="btnSiguiente" disabled style="background: #f8f9fa; border: 1px solid #dadce0; border-radius: 3px; padding: 3px 6px; font-size: 0.6em; color: #5f6368; cursor: pointer; margin-left: 6px;">
+                Siguiente ▶
+            </button>
+            <div class="loading-indicator" id="ambitoLoading">🔄 Kargatzen...</div>
+        </div>
 
-     <div class="tabs">
-         <button class="tab active" onclick="cambiarPestana('evaluacion1')">
-             📊 Lehen ebaluaketa
-         </button>
-         <button class="tab" onclick="cambiarPestana('evaluacion2')">
-             📈 Bigarren ebaluaketa
-         </button>
-     </div>
+        <div class="tabs">
+            <button class="tab active" onclick="cambiarPestana('evaluacion1')">
+                📊 Lehen ebaluaketa
+            </button>
+            <button class="tab" onclick="cambiarPestana('evaluacion2')">
+                📈 Bigarren ebaluaketa
+            </button>
+        </div>
 
-     <!-- PRIMERA EVALUACIÓN -->
-     <div id="evaluacion1" class="tab-content active">
-         <div class="content">
-             <div style="display: flex; gap: 4px; margin-bottom: 2px;">
-                 <div class="info-section" style="flex: 1; margin-bottom: 0;">
-                     <div class="selection-count">
-                         <span id="selectedCount1">0</span>/<span id="maxCriterios1">4</span>
-                     </div>
-                     <div class="selection-desc">
-                         máximo
-                     </div>
-                 </div>
-                 <div style="flex: 1; background: #fff3cd; border: 1px solid #ffc107; border-radius: 3px; padding: 1px 3px;">
-                     <div style="color: #856404; margin-bottom: 1px; font-size: 0.65em; font-weight: bold;">⭐ KALIFIKAZIOA:</div>
-                     <select id="notaEvaluacion1" style="width: 100%; padding: 1px 2px; border: 1px solid #ff6d01; border-radius: 2px; font-size: 0.65em; background: white; font-weight: bold;">
-                         <option value="">🚨 AUKERATU</option>
-                         <option value="O.A.E.">O.A.E.</option>
-                         <option value="A.E.">A.E.</option>
-                         <option value="B.D.">B.D.</option>
-                         <option value="H.B.">H.B.</option>
-                     </select>
-                 </div>
-             </div>
+        <!-- PRIMERA EVALUACIÓN -->
+        <div id="evaluacion1" class="tab-content active">
+            <div class="content">
+                <div style="display: flex; gap: 4px; margin-bottom: 2px;">
+                    <div class="info-section" style="flex: 1; margin-bottom: 0;">
+                        <div class="selection-count">
+                            <span id="selectedCount1">0</span>/<span id="maxCriterios1">4</span>
+                        </div>
+                        <div class="selection-desc">
+                            máximo
+                        </div>
+                    </div>
+                    <div style="flex: 1; background: #fff3cd; border: 1px solid #ffc107; border-radius: 3px; padding: 1px 3px;">
+                        <div style="color: #856404; margin-bottom: 1px; font-size: 0.65em; font-weight: bold;">⭐ KALIFIKAZIOA:</div>
+                        <select id="notaEvaluacion1" style="width: 100%; padding: 1px 2px; border: 1px solid #ff6d01; border-radius: 2px; font-size: 0.65em; background: white; font-weight: bold;">
+                            <option value="">🚨 AUKERATU</option>
+                            <option value="O.A.E.">O.A.E.</option>
+                            <option value="A.E.">A.E.</option>
+                            <option value="B.D.">B.D.</option>
+                            <option value="H.B.">H.B.</option>
+                        </select>
+                    </div>
+                </div>
 
-             <div class="warning" id="limitWarning1">
-                 ⚠️ MUGA GAINDITU DUZU. Desautatu bat beste bat aukeratzeko.
-             </div>
+                <div class="warning" id="limitWarning1">
+                    ⚠️ MUGA GAINDITU DUZU. Desautatu bat beste bat aukeratzeko.
+                </div>
 
-             <div class="selected-preview">
-                 <h3>📋 Aukeratuak:</h3>
-                 <div id="selectedItems1">
-                     <span style="color: #5f6368; font-style: italic; font-size: 0.65em;">Itemik aukeratu gabe</span>
-                 </div>
-             </div>
+                <div class="selected-preview">
+                    <h3>📋 Aukeratuak:</h3>
+                    <div id="selectedItems1">
+                        <span style="color: #5f6368; font-style: italic; font-size: 0.65em;">Itemik aukeratu gabe</span>
+                    </div>
+                </div>
 
-             <div class="criteria-list">
-                 <div class="criteria-scroll" id="criteriaContainer1">
-                     <div class="loading" id="loading1">
-                         🔄 Aukeratu esparru bat itemak kargatzeko...
-                     </div>
-                 </div>
-             </div>
+                <div class="criteria-list">
+                    <div class="criteria-scroll" id="criteriaContainer1">
+                        <div class="loading" id="loading1">
+                            🔄 Aukeratu esparru bat itemak kargatzeko...
+                        </div>
+                    </div>
+                </div>
 
-             <div class="status" id="status1"></div>
-         </div>
+                <div class="status" id="status1"></div>
+            </div>
 
-         <div class="footer">
-             <div class="footer-info" id="footerInfo1">
-                 <strong>Aukeratu esparru bat konfigurazioa ikusteko</strong>
-             </div>
-             <div class="button-group">
-                 <button class="btn btn-cancel" onclick="cerrarModal()">
-                     Cancelar
-                 </button>
-                 <button class="btn btn-primary" onclick="insertarCriterios(1)" id="insertBtn1" disabled>
-                     ✅ 1. Ebal txertatu
-                 </button>
-             </div>
-         </div>
-     </div>
+            <div class="footer">
+                <div class="footer-info" id="footerInfo1">
+                    <strong>Aukeratu esparru bat konfigurazioa ikusteko</strong>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-cancel" onclick="cerrarModal()">
+                        Cancelar
+                    </button>
+                    <button class="btn btn-primary" onclick="insertarCriterios(1)" id="insertBtn1" disabled>
+                        ✅ 1. Ebal txertatu
+                    </button>
+                </div>
+            </div>
+        </div>
 
-     <!-- SEGUNDA EVALUACIÓN -->
-     <div id="evaluacion2" class="tab-content">
-         <div class="content">
-             <div style="display: flex; gap: 4px; margin-bottom: 2px;">
-                 <div class="info-section" style="flex: 1; margin-bottom: 0;">
-                     <div class="selection-count">
-                         <span id="selectedCount2">0</span>/<span id="maxCriterios2">4</span>
-                     </div>
-                     <div class="selection-desc">
-                         máximo
-                     </div>
-                 </div>
-                 <div style="flex: 1; background: #fff3cd; border: 1px solid #ffc107; border-radius: 3px; padding: 1px 3px;">
-                     <div style="color: #856404; margin-bottom: 1px; font-size: 0.65em; font-weight: bold;">⭐ KALIFIKAZIOA:</div>
-                     <select id="notaEvaluacion2" style="width: 100%; padding: 1px 2px; border: 1px solid #ff6d01; border-radius: 2px; font-size: 0.65em; background: white; font-weight: bold;">
-                         <option value="">🚨 DERRIGORREZKOA</option>
-                         <option value="O.A.E.">O.A.E.</option>
-                         <option value="A.E.">A.E.</option>
-                         <option value="B.D.">B.D.</option>
-                         <option value="H.B.">H.B.</option>
-                     </select>
-                 </div>
-             </div>
+        <!-- SEGUNDA EVALUACIÓN -->
+        <div id="evaluacion2" class="tab-content">
+            <div class="content">
+                <div style="display: flex; gap: 4px; margin-bottom: 2px;">
+                    <div class="info-section" style="flex: 1; margin-bottom: 0;">
+                        <div class="selection-count">
+                            <span id="selectedCount2">0</span>/<span id="maxCriterios2">4</span>
+                        </div>
+                        <div class="selection-desc">
+                            máximo
+                        </div>
+                    </div>
+                    <div style="flex: 1; background: #fff3cd; border: 1px solid #ffc107; border-radius: 3px; padding: 1px 3px;">
+                        <div style="color: #856404; margin-bottom: 1px; font-size: 0.65em; font-weight: bold;">⭐ KALIFIKAZIOA:</div>
+                        <select id="notaEvaluacion2" style="width: 100%; padding: 1px 2px; border: 1px solid #ff6d01; border-radius: 2px; font-size: 0.65em; background: white; font-weight: bold;">
+                            <option value="">🚨 DERRIGORREZKOA</option>
+                            <option value="O.A.E.">O.A.E.</option>
+                            <option value="A.E.">A.E.</option>
+                            <option value="B.D.">B.D.</option>
+                            <option value="H.B.">H.B.</option>
+                        </select>
+                    </div>
+                </div>
 
-             <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 3px; padding: 2px 4px; margin-bottom: 2px;">
-                 <div style="color: #1565c0; font-size: 0.65em; font-weight: bold;">📊 1. Ebal erref:</div>
-                 <div id="referenciaPrimera" style="color: #1976d2; font-size: 0.6em; margin-top: 1px; line-height: 1.2; max-height: 45px; overflow-x: auto; overflow-y: hidden; white-space: nowrap;">
-                     Aukeratu esparrua...
-                 </div>
-             </div>
+                <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 3px; padding: 2px 4px; margin-bottom: 2px;">
+                    <div style="color: #1565c0; font-size: 0.65em; font-weight: bold;">📊 1. Ebal erref:</div>
+                    <div id="referenciaPrimera" style="color: #1976d2; font-size: 0.6em; margin-top: 1px; line-height: 1.2; max-height: 45px; overflow-x: auto; overflow-y: hidden; white-space: nowrap;">
+                        Aukeratu esparrua...
+                    </div>
+                </div>
 
-             <div class="warning" id="limitWarning2">
-                 ⚠️ MUGA GAINDITU DUZU. Desautatu bat beste bat aukeratzeko.
-             </div>
+                <div class="warning" id="limitWarning2">
+                    ⚠️ MUGA GAINDITU DUZU. Desautatu bat beste bat aukeratzeko.
+                </div>
 
-             <div class="selected-preview">
-                 <h3>📋 Aukeratuak:</h3>
-                 <div id="selectedItems2">
-                     <span style="color: #5f6368; font-style: italic; font-size: 0.65em;">Item bat ere ez duzu aukeratu</span>
-                 </div>
-             </div>
+                <div class="selected-preview">
+                    <h3>📋 Aukeratuak:</h3>
+                    <div id="selectedItems2">
+                        <span style="color: #5f6368; font-style: italic; font-size: 0.65em;">Item bat ere ez duzu aukeratu</span>
+                    </div>
+                </div>
 
-             <div class="criteria-list">
-                 <div class="criteria-scroll" id="criteriaContainer2">
-                     <div class="loading" id="loading2">
-                         🔄 Aukeratu esparru bat itemak kargatzeko...
-                     </div>
-                 </div>
-             </div>
+                <div class="criteria-list">
+                    <div class="criteria-scroll" id="criteriaContainer2">
+                        <div class="loading" id="loading2">
+                            🔄 Aukeratu esparru bat itemak kargatzeko...
+                        </div>
+                    </div>
+                </div>
 
-             <div class="status" id="status2"></div>
-         </div>
+                <div class="status" id="status2"></div>
+            </div>
 
-         <div class="footer">
-             <div class="footer-info" id="footerInfo2">
-                 <strong>Aukeratu esparru bat konfigurazioa ikusteko</strong>
-             </div>
-             <div class="button-group">
-                 <button class="btn btn-cancel" onclick="cerrarModal()">
-                     Cancelar
-                 </button>
-                 <button class="btn btn-primary" onclick="insertarCriterios(2)" id="insertBtn2" disabled>
-                     ✅ 2. ebal txertatu
-                 </button>
-             </div>
-         </div>
-     </div>
- </div>
+            <div class="footer">
+                <div class="footer-info" id="footerInfo2">
+                    <strong>Aukeratu esparru bat konfigurazioa ikusteko</strong>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-cancel" onclick="cerrarModal()">
+                        Cancelar
+                    </button>
+                    <button class="btn btn-primary" onclick="insertarCriterios(2)" id="insertBtn2" disabled>
+                        ✅ 2. ebal txertatu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
- <script>
-     let configuraciones = [];
-     let configuracionActual = null;
-     let criteriosData = [];
-     let criteriosSeleccionados1 = [];
-     let criteriosSeleccionados2 = [];
-
-     function inicializar() {
-         try {
-             const configuracionString = '<?= configuracion ?>';
-             
-             if (configuracionString && configuracionString !== 'undefined' && configuracionString !== '') {
-                 configuraciones = JSON.parse(configuracionString);
-                 llenarSelectorAmbitos();
-             } else {
-                 mostrarEstado(1, 'error', 'No se encontró configuración de ámbitos en la Hoja 1');
-             }
-           
-         } catch (error) {
-             console.error('Error durante la inicialización:', error);
-             mostrarEstado(1, 'error', 'Error al cargar configuración: ' + error.message);
-         }
-     }
-
-     function llenarSelectorAmbitos() {
-         const selector = document.getElementById('selectorAmbito');
-         selector.innerHTML = '<option value="">-- Aukeratu esparru bat --</option>';
-       
-         configuraciones.forEach((config, index) => {
-             const option = document.createElement('option');
-             option.value = index;
-             option.textContent = config.nombreHoja;
-             selector.appendChild(option);
-         });
-       
-         selector.addEventListener('change', function() {
-             setTimeout(() => cambiarAmbito(), 10);
-         });
-         
-         // Inicializar botones de navegación
-         actualizarBotonesNavegacion();
-     }
-
-     function cambiarAmbito() {
-         const selector = document.getElementById('selectorAmbito');
-         if (!selector) {
-             console.error('Selector de ámbito no encontrado');
-             return;
-         }
-       
-         const selectedIndex = selector.value;
-       
-         if (selectedIndex === '' || selectedIndex === null || selectedIndex === undefined) {
-             configuracionActual = null;
-             criteriosData = [];
-             limpiarDatos();
-             actualizarInterfaz();
-             actualizarBotonesNavegacion();
-             return;
-         }
-       
-         const configIndex = parseInt(selectedIndex);
-       
-         if (isNaN(configIndex) || configIndex < 0 || configIndex >= configuraciones.length) {
-             console.error('Índice inválido:', configIndex, 'Longitud array:', configuraciones.length);
-             mostrarEstado(1, 'error', 'Error: Índice de configuración inválido');
-             return;
-         }
-       
-         configuracionActual = configuraciones[configIndex];
-       
-         if (!configuracionActual) {
-             console.error('Configuración es null/undefined');
-             mostrarEstado(1, 'error', 'Error: Configuración no encontrada');
-             return;
-         }
-       
-         try {
-             const headerSubtitle = document.getElementById('headerSubtitle');
-             const maxCriterios1 = document.getElementById('maxCriterios1');
-             const maxCriterios2 = document.getElementById('maxCriterios2');
-           
-             if (headerSubtitle) {
-                 headerSubtitle.textContent = ` ${configuracionActual.nombreHoja}-ren ebaluazioa`;
-             }
-             if (maxCriterios1) {
-                 maxCriterios1.textContent = configuracionActual.numeroCriterios;
-             }
-             if (maxCriterios2) {
-                 maxCriterios2.textContent = configuracionActual.numeroCriterios;
-             }
-           
-             actualizarFooterInfo();
-             limpiarDatos();
-             cargarCriteriosAmbito();
-             actualizarBotonesNavegacion();
-           
-         } catch (error) {
-             console.error('Error al actualizar interfaz:', error);
-             mostrarEstado(1, 'error', 'Error al actualizar interfaz: ' + error.message);
-         }
-     }
-
-     function actualizarBotonesNavegacion() {
-         const selector = document.getElementById('selectorAmbito');
-         const btnAnterior = document.getElementById('btnAnterior');
-         const btnSiguiente = document.getElementById('btnSiguiente');
-         
-         if (!selector || !btnAnterior || !btnSiguiente) return;
-         
-         const currentIndex = parseInt(selector.value);
-         const maxIndex = configuraciones.length - 1;
-         
-         // Botón Anterior
-         if (isNaN(currentIndex) || currentIndex <= 0) {
-             btnAnterior.disabled = true;
-             btnAnterior.style.color = '#9aa0a6';
-             btnAnterior.style.cursor = 'not-allowed';
-         } else {
-             btnAnterior.disabled = false;
-             btnAnterior.style.color = '#1a73e8';
-             btnAnterior.style.cursor = 'pointer';
-         }
-         
-         // Botón Siguiente
-         if (isNaN(currentIndex) || currentIndex >= maxIndex) {
-             btnSiguiente.disabled = true;
-             btnSiguiente.style.color = '#9aa0a6';
-             btnSiguiente.style.cursor = 'not-allowed';
-         } else {
-             btnSiguiente.disabled = false;
-             btnSiguiente.style.color = '#1a73e8';
-             btnSiguiente.style.cursor = 'pointer';
-         }
-     }
-
-     function cambiarAmbitoAnterior() {
-         const selector = document.getElementById('selectorAmbito');
-         const currentIndex = parseInt(selector.value);
-         
-         if (!isNaN(currentIndex) && currentIndex > 0) {
-             selector.value = (currentIndex - 1).toString();
-             cambiarAmbito();
-         }
-     }
-
-     function cambiarAmbitoSiguiente() {
-         const selector = document.getElementById('selectorAmbito');
-         const currentIndex = parseInt(selector.value);
-         const maxIndex = configuraciones.length - 1;
-         
-         if (!isNaN(currentIndex) && currentIndex < maxIndex) {
-             selector.value = (currentIndex + 1).toString();
-             cambiarAmbito();
-         }
-     }
-
-     function actualizarFooterInfo() {
-         if (!configuracionActual) return;
-       
-         const footerInfo1 = document.getElementById('footerInfo1');
-         const footerInfo2 = document.getElementById('footerInfo2');
-       
-         if (!footerInfo1 || !footerInfo2) {
-             console.error('Elementos footerInfo no encontrados');
-             return;
-         }
-       
-         footerInfo1.innerHTML = `
-             <strong> 1ª Eval (${configuracionActual.nombreHoja}):</strong><br>
-             • Itemak: ${configuracionActual.celdasOcupa}<br>
-             • Kalifikazioa: ${configuracionActual.celda1Eval}<br>
-             • Gehienezko itemak: ${configuracionActual.numeroCriterios}
-         `;
-       
-         footerInfo2.innerHTML = `
-             <strong> 2ª Eval (${configuracionActual.nombreHoja}):</strong><br>
-             • Itemak: ${configuracionActual.celdasOcupa} (sobrescribe 1ª)<br>
-             • Kalifikazioa: ${configuracionActual.celda2Eval}<br>
-             • Gehienezko itemak: ${configuracionActual.numeroCriterios}
-         `;
-     }
-
-     function cargarCriteriosAmbito() {
-         if (!configuracionActual) return;
-       
-         const loadingIndicator = document.getElementById('ambitoLoading');
-         const loading1 = document.getElementById('loading1');
-         const loading2 = document.getElementById('loading2');
-       
-         if (loadingIndicator) {
-             loadingIndicator.classList.add('show');
-         }
-       
-         if (loading1) {
-             loading1.textContent = `🔄 Itemak kargatzen ${configuracionActual.nombreHoja}...`;
-             loading1.style.display = 'block';
-         }
-       
-         if (loading2) {
-             loading2.textContent = `🔄 Itemak kargatzen ${configuracionActual.nombreHoja}...`;
-             loading2.style.display = 'block';
-         }
-       
-         google.script.run
-             .withSuccessHandler(function(criterios) {
-                 if (loadingIndicator) {
-                     loadingIndicator.classList.remove('show');
-                 }
-                 if (loading1) {
-                     loading1.style.display = 'none';
-                 }
-                 if (loading2) {
-                     loading2.style.display = 'none';
-                 }
-               
-                 if (!criterios || criterios.length === 0) {
-                     mostrarEstado(1, 'error', `No se encontraron criterios en la hoja "${configuracionActual.nombreHoja}"`);
-                     mostrarEstado(2, 'error', `No se encontraron criterios en la hoja "${configuracionActual.nombreHoja}"`);
-                 } else {
-                     criteriosData = criterios;
-                     renderizarCriterios(1);
-                     renderizarCriterios(2);
-                     cargarDatosPrimeraEvaluacion();
-                     
-                     // NUEVA FUNCIONALIDAD: Verificar si hay datos de 1ª evaluación para saltar a 2ª pestaña
-                     verificarYSaltarPestana();
-                 }
-             })
-             .withFailureHandler(function(error) {
-                 if (loadingIndicator) {
-                     loadingIndicator.classList.remove('show');
-                 }
-                 if (loading1) {
-                     loading1.style.display = 'none';
-                 }
-                 if (loading2) {
-                     loading2.style.display = 'none';
-                 }
-               
-                 const mensajeError = error.message || error.toString();
-                 mostrarEstado(1, 'error', `Errore kargatzen "${configuracionActual.nombreHoja}": ${mensajeError}`);
-                 mostrarEstado(2, 'error', `Errorea kargatzen "${configuracionActual.nombreHoja}": ${mensajeError}`);
-             })
-             .cargarTodosLosCriterios(configuracionActual.nombreHoja, configuracionActual.numeroCriterios);
-     }
-
-     function verificarYSaltarPestana() {
-         if (!configuracionActual) return;
-
-         // Verificar si hay datos de 1ª evaluación
-         google.script.run
-             .withSuccessHandler(function(datos) {
-                 // Si hay nota en 1ª evaluación, saltar automáticamente a 2ª pestaña
-                 if (datos && datos.tieneDatos && datos.nota && datos.nota.trim() !== '') {
-                     console.log('🎯 1ª evaluación completada detectada, saltando a 2ª pestaña');
-                     cambiarPestana('evaluacion2');
-                 } else {
-                     console.log('ℹ️ No hay datos de 1ª evaluación, permaneciendo en 1ª pestaña');
-                     // Asegurar que esté en 1ª pestaña si no hay datos
-                     const pestana1Activa = document.getElementById('evaluacion1').classList.contains('active');
-                     if (!pestana1Activa) {
-                         cambiarPestana('evaluacion1');
-                     }
-                 }
-             })
-             .withFailureHandler(function(error) {
-                 console.log('ℹ️ Error verificando 1ª evaluación, permaneciendo en pestaña actual:', error);
-                 // En caso de error, no hacer nada (mantener pestaña actual)
-             })
-             .obtenerDatosPrimera(configuracionActual);
-     }
-
-     function limpiarDatos() {
-         criteriosSeleccionados1 = [];
-         criteriosSeleccionados2 = [];
-       
-         document.getElementById('notaEvaluacion1').value = '';
-         document.getElementById('notaEvaluacion2').value = '';
-       
-         actualizarContador(1);
-         actualizarContador(2);
-         actualizarPreview(1);
-         actualizarPreview(2);
-     }
-
-     function actualizarInterfaz() {
-         if (!configuracionActual) {
-             document.getElementById('loading1').textContent = '🔄 Aukeratu esparru bat itemak kargatzeko...';
-             document.getElementById('loading2').textContent = '🔄 Aukeratu esparru bat itemak kargatzeko...';
-             document.getElementById('referenciaPrimera').textContent = 'Aukeratu esparru bat itemak kargatzeko...';
-             document.getElementById('footerInfo1').innerHTML = '<strong>Aukeratu esparru bat konfigurazioa ikusteko</strong>';
-             document.getElementById('footerInfo2').innerHTML = '<strong>Aukeratu esparru bat konfigurazioa ikusteko</strong>';
-             document.getElementById('headerSubtitle').textContent = 'Aldi akademikoen ebaluazio sistema';
-         }
-     }
-
-     function cambiarPestana(pestana) {
-         // Limpiar clases activas
-         document.querySelectorAll('.tab-content').forEach(content => {
-             content.classList.remove('active');
-         });
-       
-         document.querySelectorAll('.tab').forEach(tab => {
-             tab.classList.remove('active');
-         });
-       
-         // Activar nueva pestaña
-         document.getElementById(pestana).classList.add('active');
-         
-         // Encontrar y activar el botón correspondiente
-         const tabs = document.querySelectorAll('.tab');
-         if (pestana === 'evaluacion1' && tabs[0]) {
-             tabs[0].classList.add('active');
-         } else if (pestana === 'evaluacion2' && tabs[1]) {
-             tabs[1].classList.add('active');
-         }
-       
-         // Cargar datos de primera evaluación si se cambia a segunda pestaña
-         if (pestana === 'evaluacion2' && configuracionActual) {
-             cargarDatosPrimeraEvaluacion();
-         }
-     }
-
-     function cargarDatosPrimeraEvaluacion() {
-         if (!configuracionActual) {
-             document.getElementById('referenciaPrimera').textContent = 'Aukeratu esparrua...';
-             return;
-         }
-       
-         const referenciaDiv = document.getElementById('referenciaPrimera');
-         if (referenciaDiv) {
-             referenciaDiv.innerHTML = '🔄 Datuak kargtzen...';
-         } else {
-             return;
-         }
-       
-         google.script.run
-             .withSuccessHandler(function(datos) {
-                 const referenciaDiv = document.getElementById('referenciaPrimera');
-                
-                 if (!referenciaDiv) {
-                     return;
-                 }
-                
-                 setTimeout(() => {
-                     try {
-                         let mensaje = '';
-                        
-                         if (datos && typeof datos === 'object') {
-                             if (datos.tieneDatos) {
-                                 // MOSTRAR NOTA (sin HTML tags)
-                                 if (datos.nota && datos.nota.trim() !== '') {
-                                     mensaje += `📝 Kalifikazioa: ${datos.nota}`;
-                                 }
-                                
-                                 // MOSTRAR TODOS LOS CRITERIOS HORIZONTALMENTE (sin HTML tags)
-                                 if (datos.criterios && Array.isArray(datos.criterios) && datos.criterios.length > 0) {
-                                     if (mensaje) mensaje += ' | ';
-                                     mensaje += `📋 Itemak (${datos.criterios.length}): `;
-                                     
-                                     // Mostrar criterios separados por " • " horizontalmente
-                                     mensaje += datos.criterios.join(' • ');
-                                 }
-                                
-                                 if (mensaje) {
-                                     referenciaDiv.textContent = mensaje;
-                                 } else {
-                                     referenciaDiv.textContent = '📝 Datuak aurkitu dira baina hutsik daude';
-                                 }
-                             } else {
-                                 referenciaDiv.textContent = '📝 Lehenengo ebaluaketako daturik gabe';
-                             }
-                         } else {
-                             referenciaDiv.textContent = '❌ Datos inválidos recibidos';
-                         }
-                        
-                     } catch (error) {
-                         console.error('❌ Error procesando datos:', error);
-                         referenciaDiv.textContent = '❌ Error procesando datos';
-                     }
-                 }, 500);
-             })
-             .withFailureHandler(function(error) {
-                 const referenciaDiv = document.getElementById('referenciaPrimera');
-                 if (referenciaDiv) {
-                     referenciaDiv.innerHTML = '❌ Error al cargar referencia: ' + error.message;
-                 }
-             })
-             .obtenerDatosPrimera(configuracionActual);
-     }
-
-     function renderizarCriterios(evaluacion) {
-         const container = document.getElementById(`criteriaContainer${evaluacion}`);
-         if (!container) {
-             console.error(`Container criteriaContainer${evaluacion} no encontrado`);
-             return;
-         }
-       
-         const loading = document.getElementById(`loading${evaluacion}`);
-       
-         if (loading) {
-             loading.style.display = 'none';
-         }
-       
-         if (!criteriosData || criteriosData.length === 0) {
-             const nombreHoja = configuracionActual ? configuracionActual.nombreHoja : 'seleccionada';
-             container.innerHTML = `
-                 <div class="empty-state">
-                     <strong>No se encontraron criterios en la hoja "${nombreHoja}"</strong><br><br>
-                     <small>Verifica que:</small><br>
-                     <small>• La hoja "${nombreHoja}" existe</small><br>
-                     <small>• Tiene datos en las columnas A, B, C desde la fila 2</small><br>
-                     <small>• La columna A contiene criterios en euskera</small>
-                 </div>
-                 <div class="loading" id="loading${evaluacion}" style="display: none;">
-                     🔄 Selecciona un ámbito para cargar criterios...
-                 </div>
-             `;
-             return;
-         }
-
-         let htmlContent = '';
-       
-         criteriosData.forEach((criterio, index) => {
-             const criteriosActuales = evaluacion === 1 ? criteriosSeleccionados1 : criteriosSeleccionados2;
-             const isSelected = criteriosActuales.some(sc => sc.id === criterio.id);
-             const grupoIndex = Math.floor(index / 3);
-             const grupoClass = grupoIndex % 2 === 0 ? 'grupo-a' : 'grupo-b';
-           
-             htmlContent += `
-                 <div class="criteria-item nivel-${criterio.nivel} ${grupoClass} ${isSelected ? 'selected' : ''}"
-                      data-criterio-id="${criterio.id}"
-                      data-evaluacion="${evaluacion}">
-                     <div class="checkbox"></div>
-                     <div class="criteria-content">
-                         <div class="criteria-text">${criterio.texto}</div>
-                     </div>
-                 </div>
-             `;
-         });
-       
-         htmlContent += `<div class="loading" id="loading${evaluacion}" style="display: none;">
-             🔄 Selecciona un ámbito para cargar criterios...
-         </div>`;
-       
-         container.innerHTML = htmlContent;
-       
-         const criteriaItems = container.querySelectorAll('.criteria-item');
-         criteriaItems.forEach(item => {
-             item.addEventListener('click', function(e) {
-                 e.preventDefault();
-                 e.stopPropagation();
-                 const criterioId = this.getAttribute('data-criterio-id');
-                 const criterio = criteriosData.find(c => c.id === criterioId);
-                 if (criterio) {
-                     toggleCriterio(criterio, evaluacion);
-                 }
-             });
-         });
-     }
-
-     function toggleCriterio(criterio, evaluacion) {
-         if (!configuracionActual) {
-             mostrarEstado(evaluacion, 'errorea', 'Aukeratu esparua lehenengo');
-             return;
-         }
-       
-         let criteriosActuales = evaluacion === 1 ? criteriosSeleccionados1 : criteriosSeleccionados2;
-         const isSelected = criteriosActuales.some(sc => sc.id === criterio.id);
-         const MAX_SELECCION = configuracionActual.numeroCriterios;
-       
-         if (isSelected) {
-             if (evaluacion === 1) {
-                 criteriosSeleccionados1 = criteriosSeleccionados1.filter(sc => sc.id !== criterio.id);
-             } else {
-                 criteriosSeleccionados2 = criteriosSeleccionados2.filter(sc => sc.id !== criterio.id);
-             }
-         } else {
-             if (criteriosActuales.length < MAX_SELECCION) {
-                 if (evaluacion === 1) {
-                     criteriosSeleccionados1.push(criterio);
-                 } else {
-                     criteriosSeleccionados2.push(criterio);
-                 }
-             } else {
-                 const warning = document.getElementById(`limitWarning${evaluacion}`);
-                 warning.textContent = `⚠️ Gehiengoa pasatu duzu (${MAX_SELECCION}). Kendu aukera bat lehenengo`;
-                 warning.classList.add('show');
-                 setTimeout(() => {
-                     warning.classList.remove('show');
-                 }, 2000);
-                 return;
-             }
-         }
-       
-         actualizarContador(evaluacion);
-         actualizarVisualizacion(evaluacion);
-         actualizarPreview(evaluacion);
-     }
-
-     function actualizarVisualizacion(evaluacion) {
-         const items = document.querySelectorAll(`[data-evaluacion="${evaluacion}"].criteria-item`);
-         const criteriosActuales = evaluacion === 1 ? criteriosSeleccionados1 : criteriosSeleccionados2;
-       
-         items.forEach(item => {
-             const criterioId = item.getAttribute('data-criterio-id');
-             const isSelected = criteriosActuales.some(sc => sc.id === criterioId);
-           
-             if (isSelected) {
-                 item.classList.add('selected');
-             } else {
-                 item.classList.remove('selected');
-             }
-         });
-     }
-
-     function actualizarContador(evaluacion) {
-         const criteriosActuales = evaluacion === 1 ? criteriosSeleccionados1 : criteriosSeleccionados2;
-         document.getElementById(`selectedCount${evaluacion}`).textContent = criteriosActuales.length;
-         document.getElementById(`insertBtn${evaluacion}`).disabled = criteriosActuales.length === 0;
-     }
-
-     function actualizarPreview(evaluacion) {
-         const container = document.getElementById(`selectedItems${evaluacion}`);
-         const criteriosActuales = evaluacion === 1 ? criteriosSeleccionados1 : criteriosSeleccionados2;
-         container.innerHTML = '';
-       
-         if (criteriosActuales.length === 0) {
-             container.innerHTML = '<span style="color: #5f6368; font-style: italic; font-size: 0.65em;">Ez duzu itemik aukeratu</span>';
-             return;
-         }
-       
-         criteriosActuales.forEach(criterio => {
-             const item = document.createElement('div');
-             item.className = 'selected-item';
-           
-             const textoCorto = criterio.texto.length > 25
-                 ? criterio.texto.substring(0, 25) + '...'
-                 : criterio.texto;
-           
-             item.innerHTML = `
-                 <span>${textoCorto}</span>
-                 <span class="remove-btn" onclick="removerCriterio('${criterio.id}', ${evaluacion}); event.stopPropagation();">&times;</span>
-             `;
-             container.appendChild(item);
-         });
-     }
-
-     function removerCriterio(criterioId, evaluacion) {
-         if (evaluacion === 1) {
-             criteriosSeleccionados1 = criteriosSeleccionados1.filter(sc => sc.id !== criterioId);
-         } else {
-             criteriosSeleccionados2 = criteriosSeleccionados2.filter(sc => sc.id !== criterioId);
-         }
-       
-         actualizarContador(evaluacion);
-         actualizarVisualizacion(evaluacion);
-         actualizarPreview(evaluacion);
-     }
-
-     function insertarCriterios(evaluacion) {
-         if (!configuracionActual) {
-             mostrarEstado(evaluacion, 'error', 'Aukeratu lehenengo esparru bat');
-             return;
-         }
-       
-         const criteriosActuales = evaluacion === 1 ? criteriosSeleccionados1 : criteriosSeleccionados2;
-         const notaSelector = evaluacion === 1 ? 'notaEvaluacion1' : 'notaEvaluacion2';
-       
-         if (criteriosActuales.length === 0) {
-             mostrarEstado(evaluacion, 'error', 'Aukeratu gutxienez esparru bat');
-             return;
-         }
-
-         const notaEvaluacion = document.getElementById(notaSelector).value;
-         if (!notaEvaluacion || notaEvaluacion.trim() === '') {
-             const mensajeError = evaluacion === 1
-                 ? '⚠️ DERRIGORREZKOA: Gutxienez kalifikazio bat aukeratu behar duzu lehen ebaluaketarako'
-                 : '⚠️ DERRIGORREZKOA: Gutxienez kalifikazio bat aukeratu behar duzu bigarren ebaluaketarako';
-           
-             mostrarEstado(evaluacion, 'error', mensajeError);
-           
-             const selector = document.getElementById(notaSelector);
-             selector.style.borderColor = '#ea4335';
-             selector.style.boxShadow = '0 0 0 3px rgba(234, 67, 53, 0.3)';
-           
-             setTimeout(() => {
-                 selector.style.borderColor = '#ff6d01';
-                 selector.style.boxShadow = 'none';
-             }, 3000);
-           
-             return;
-         }
-
-         const insertBtn = document.getElementById(`insertBtn${evaluacion}`);
-         insertBtn.disabled = true;
-         insertBtn.textContent = '⏳ Txertatzen...';
-
-         google.script.run
-             .withSuccessHandler((result) => onInsertSuccess(result, evaluacion))
-             .withFailureHandler((error) => onInsertError(error, evaluacion))
-             .insertarCriterios(criteriosActuales, notaEvaluacion, evaluacion, configuracionActual);
-     }
-
-     function onInsertSuccess(result, evaluacion) {
-         if (result.success) {
-             mostrarEstado(evaluacion, 'success', result.message);
-           
-             // Actualizar la referencia en la segunda pestaña
-             if (evaluacion === 1 || evaluacion === 2) {
-                 cargarDatosPrimeraEvaluacion();
-             }
-           
-             // Reactivar el botón para permitir más inserciones si es necesario
-             const insertBtn = document.getElementById(`insertBtn${evaluacion}`);
-             insertBtn.disabled = false;
-             insertBtn.textContent = `✅ Txertatu ${evaluacion}ª Eval`;
-           
-             // NO CERRAR AUTOMÁTICAMENTE - El usuario decide cuándo cerrar
-         } else {
-             mostrarEstado(evaluacion, 'error', result.message);
-             document.getElementById(`insertBtn${evaluacion}`).disabled = false;
-             document.getElementById(`insertBtn${evaluacion}`).textContent = `✅ Insertar ${evaluacion}ª Eval`;
-         }
-     }
-
-     function onInsertError(error, evaluacion) {
-         console.error(`Error evaluación ${evaluacion}:`, error);
-         mostrarEstado(evaluacion, 'error', 'Error: ' + error.message);
-       
-         document.getElementById(`insertBtn${evaluacion}`).disabled = false;
-         document.getElementById(`insertBtn${evaluacion}`).textContent = `✅ Txertatu ${evaluacion}ª Eval`;
-     }
-
-     function mostrarEstado(evaluacion, tipo, mensaje) {
-         const status = document.getElementById(`status${evaluacion}`);
-         if (!status) {
-             console.error(`Elemento status${evaluacion} no encontrado`);
-             return;
-         }
-       
-         status.className = `status ${tipo}`;
-         status.textContent = mensaje;
-         status.style.display = 'block';
-       
-         setTimeout(() => {
-             if (status) {
-                 status.style.display = 'none';
-             }
-         }, 4000);
-     }
-
-     function cerrarModal() {
-         google.script.host.close();
-     }
-
-     window.onload = inicializar;
- </script>
+    <?!= HtmlService.createHtmlOutputFromFile('_modal.js.html').getContent(); ?>
 </body>
 </html>

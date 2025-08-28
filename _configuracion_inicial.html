@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Google Sans', 'Segoe UI', Arial, sans-serif; 
+            background: #f8f9fa; 
+            color: #202124; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        
+        .main-container { 
+            width: 100%; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            background: white; 
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4285f4, #34a853);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin-bottom: 8px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 1em;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            overflow-y: auto;
+        }
+        
+        .step-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 5px solid #4285f4;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #4285f4;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .step-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #202124;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #3c4043;
+            font-size: 0.95em;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #dadce0;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #4285f4;
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .form-col {
+            flex: 1;
+        }
+        
+        .preview-section {
+            background: #f8f9fa;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .preview-section h4 {
+            color: #202124;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        
+        .alumno-preview {
+            background: white;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 6px;
+            border-left: 3px solid #34a853;
+            font-size: 0.9em;
+            color: #3c4043;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+            display: none;
+        }
+        .status.success {
+            background: #e6f4ea;
+            color: #137333;
+            border-left: 4px solid #34a853;
+        }
+        .status.error {
+            background: #fce8e6;
+            color: #d93025;
+            border-left: 4px solid #ea4335;
+        }
+        .status.info {
+            background: #e8f0fe;
+            color: #1565c0;
+            border-left: 4px solid #4285f4;
+        }
+        .status.show {
+            display: block;
+        }
+        
+        .footer {
+            background: white;
+            padding: 20px 30px;
+            border-top: 1px solid #dadce0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .footer-info {
+            color: #5f6368;
+            font-size: 0.9em;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        
+        .btn-cancel {
+            background: #f8f9fa;
+            color: #5f6368;
+            border: 2px solid #dadce0;
+        }
+        .btn-cancel:hover {
+            background: #f1f3f4;
+            border-color: #9aa0a6;
+        }
+        
+        .btn-primary {
+            background: #4285f4;
+            color: white;
+            box-shadow: 0 2px 4px rgba(66, 133, 244, 0.3);
+        }
+        .btn-primary:hover {
+            background: #3367d6;
+            box-shadow: 0 3px 8px rgba(66, 133, 244, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-primary:disabled {
+            background: #dadce0;
+            color: #9aa0a6;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        
+        .btn-success {
+            background: #34a853;
+            color: white;
+            box-shadow: 0 2px 4px rgba(52, 168, 83, 0.3);
+        }
+        .btn-success:hover {
+            background: #2d8f47;
+            box-shadow: 0 3px 8px rgba(52, 168, 83, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-success:disabled {
+            background: #dadce0;
+            color: #9aa0a6;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #4285f4;
+        }
+        
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e8f0fe;
+            border-top: 2px solid #4285f4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #856404;
+        }
+        
+        .warning-box h4 {
+            margin-bottom: 8px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1>⚙️ Configuración Sistema Txostenak</h1>
+            <p>Configurar datos básicos y crear hojas individuales por alumno</p>
+        </div>
+
+        <div class="content">
+            <!-- PASO 1: Datos del tutor, curso y evaluación -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Datos del Tutor, Curso y Evaluación</div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label class="form-label" for="nombreTutor">👤 Nombre del Tutor:</label>
+                            <input type="text" id="nombreTutor" class="form-input" placeholder="Ej: María García López">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label class="form-label" for="cursoEscolar">📅 Curso Escolar:</label>
+                            <input type="text" id="cursoEscolar" class="form-input" placeholder="Ej: 2024-2025">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label class="form-label" for="curso">🎓 Curso:</label>
+                            <input type="text" id="curso" class="form-input" placeholder="Ej: 3 años, 4 años, 5 años">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label class="form-label" for="evaluacion">📊 Evaluación:</label>
+                            <select id="evaluacion" class="form-select">
+                                <option value="">-- Selecciona evaluación --</option>
+                                <option value="Primera">Primera Evaluación</option>
+                                <option value="Segunda">Segunda Evaluación</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 2: Seleccionar clase -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Seleccionar Clase</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="selectorClase">🎯 Selecciona la clase del documento público:</label>
+                    <select id="selectorClase" class="form-select" onchange="cargarVistaPrevia()">
+                        <option value="">-- Cargando clases del documento público... --</option>
+                    </select>
+                    <small style="color: #5f6368; font-size: 0.85em; margin-top: 4px; display: block;">
+                        📋 Las clases se obtienen automáticamente del documento público de Mendialdea IPI
+                    </small>
+                </div>
+                
+                <div class="preview-section" id="previewSection" style="display: none;">
+                    <h4>👥 Vista previa de alumnos:</h4>
+                    <div id="alumnosPreview"></div>
+                </div>
+            </div>
+
+            <!-- PASO 3: Verificación -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Crear Hojas de Alumnos</div>
+                </div>
+                
+                <div class="warning-box" id="warningExistentes" style="display: none;">
+                    <h4>⚠️ Hojas existentes detectadas</h4>
+                    <p>Se encontraron hojas de alumnos ya creadas. Las existentes se conservarán y solo se crearán las nuevas.</p>
+                </div>
+                
+                <p style="color: #5f6368; line-height: 1.5; margin-bottom: 15px;">
+                    Se creará una copia de la hoja "TXOSTENA" para cada alumno de la clase seleccionada. 
+                    Los datos básicos se configurarán automáticamente en cada hoja.
+                </p>
+                
+                <button class="btn btn-success" onclick="crearHojasAlumnos()" id="btnCrear" disabled>
+                    🚀 Crear Hojas de Alumnos
+                </button>
+            </div>
+
+            <div class="status" id="status"></div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-info">
+                <strong>Sistema de Txostenak</strong><br>
+                Configura el sistema una vez y trabaja con alumnos individuales
+            </div>
+            <div class="button-group">
+                <button class="btn btn-cancel" onclick="cerrarModal()">
+                    ❌ Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="abrirSelectorAlumnos()" id="btnSiguiente" disabled>
+                    ➡️ Ir a Selector de Alumnos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let claseSeleccionada = null;
+        let alumnosActuales = [];
+
+        function inicializar() {
+            console.log('⚙️ Inicializando configuración...');
+            cargarClasesDisponibles();
+            
+            // Configurar eventos de validación
+            ['nombreTutor', 'cursoEscolar', 'curso', 'evaluacion'].forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', validarFormulario);
+                    input.addEventListener('change', validarFormulario);
+                }
+            });
+        }
+
+        function cargarClasesDisponibles() {
+            google.script.run
+                .withSuccessHandler(function(resultado) {
+                    const selector = document.getElementById('selectorClase');
+                    
+                    if (resultado.success) {
+                        selector.innerHTML = '<option value="">-- Selecciona tu clase --</option>';
+                        
+                        resultado.clases.forEach(clase => {
+                            const option = document.createElement('option');
+                            option.value = clase.nombre;
+                            option.textContent = clase.nombre;
+                            selector.appendChild(option);
+                        });
+                        
+                        console.log(`📚 ${resultado.clases.length} pestañas cargadas del documento público`);
+                        mostrarEstado('success', `📋 ${resultado.totalHojas || resultado.clases.length} pestañas disponibles del documento público`);
+                    } else {
+                        selector.innerHTML = '<option value="">❌ Error cargando clases</option>';
+                        mostrarEstado('error', resultado.message);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    document.getElementById('selectorClase').innerHTML = '<option value="">❌ Error de conexión</option>';
+                    mostrarEstado('error', 'Error conectando al documento público: ' + error.message);
+                })
+                .obtenerClasesDisponibles();
+        }
+
+        function cargarVistaPrevia() {
+            const selector = document.getElementById('selectorClase');
+            claseSeleccionada = selector.value;
+            
+            if (!claseSeleccionada) {
+                ocultarVistaPrevia();
+                return;
+            }
+
+            mostrarEstado('info', `🔄 Cargando alumnos de "${claseSeleccionada}"...`);
+
+            google.script.run
+                .withSuccessHandler(function(resultado) {
+                    if (resultado.success) {
+                        alumnosActuales = resultado.alumnos;
+                        mostrarVistaPrevia(resultado);
+                        validarFormulario();
+                        
+                        let mensaje = `👥 ${resultado.alumnos.length} alumnos encontrados`;
+                        if (resultado.duplicadosEliminados > 0) {
+                            mensaje += ` (${resultado.duplicadosEliminados} duplicados eliminados)`;
+                        }
+                        mostrarEstado('success', mensaje);
+                    } else {
+                        mostrarEstado('error', resultado.message);
+                        ocultarVistaPrevia();
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    mostrarEstado('error', 'Error cargando alumnos: ' + error.message);
+                    ocultarVistaPrevia();
+                })
+                .obtenerAlumnosClase(claseSeleccionada);
+        }
+
+        function mostrarVistaPrevia(resultado) {
+            const previewSection = document.getElementById('previewSection');
+            const alumnosPreview = document.getElementById('alumnosPreview');
+            
+            alumnosPreview.innerHTML = '';
+            resultado.alumnos.slice(0, 10).forEach((alumno, index) => {
+                const item = document.createElement('div');
+                item.className = 'alumno-preview';
+                item.textContent = `${index + 1}. ${alumno}`;
+                alumnosPreview.appendChild(item);
+            });
+            
+            if (resultado.alumnos.length > 10) {
+                const item = document.createElement('div');
+                item.className = 'alumno-preview';
+                item.style.fontStyle = 'italic';
+                item.style.color = '#5f6368';
+                item.textContent = `... y ${resultado.alumnos.length - 10} más`;
+                alumnosPreview.appendChild(item);
+            }
+            
+            previewSection.style.display = 'block';
+        }
+
+        function ocultarVistaPrevia() {
+            document.getElementById('previewSection').style.display = 'none';
+            alumnosActuales = [];
+            validarFormulario();
+        }
+
+        function validarFormulario() {
+            const nombreTutor = document.getElementById('nombreTutor').value.trim();
+            const cursoEscolar = document.getElementById('cursoEscolar').value.trim();
+            const curso = document.getElementById('curso').value.trim();
+            const evaluacion = document.getElementById('evaluacion').value.trim();
+            
+            const datosCompletos = nombreTutor && cursoEscolar && curso && evaluacion && claseSeleccionada && alumnosActuales.length > 0;
+            
+            document.getElementById('btnCrear').disabled = !datosCompletos;
+            return datosCompletos;
+        }
+
+        function crearHojasAlumnos() {
+            if (!validarFormulario()) {
+                mostrarEstado('error', '⚠️ Completa todos los campos obligatorios');
+                return;
+            }
+
+            const datosConfiguracion = {
+                nombreTutor: document.getElementById('nombreTutor').value.trim(),
+                cursoEscolar: document.getElementById('cursoEscolar').value.trim(),
+                curso: document.getElementById('curso').value.trim(),
+                evaluacion: document.getElementById('evaluacion').value.trim()
+            };
+
+            const btnCrear = document.getElementById('btnCrear');
+            btnCrear.disabled = true;
+            btnCrear.innerHTML = '<div class="loading"><div class="spinner"></div>Creando hojas...</div>';
+
+            mostrarEstado('info', `🚀 Creando hojas para ${alumnosActuales.length} alumnos...`);
+
+            google.script.run
+                .withSuccessHandler(function(resultado) {
+                    if (resultado.success) {
+                        let mensaje = `✅ Proceso completado!\n`;
+                        mensaje += `📁 Hojas creadas: ${resultado.hojasCreadas}\n`;
+                        mensaje += `📄 Ya existían: ${resultado.hojasExistentes}\n`;
+                        
+                        if (resultado.errores > 0) {
+                            mensaje += `❌ Errores: ${resultado.errores}\n`;
+                        }
+                        
+                        mensaje += `👥 Total alumnos: ${resultado.totalAlumnos}\n`;
+                        mensaje += `📚 Clase: ${resultado.clase}\n`;
+                        mensaje += `📊 Evaluación: ${datosConfiguracion.evaluacion}`;
+                        
+                        mostrarEstado('success', mensaje);
+                        
+                        // Habilitar botón de siguiente paso
+                        document.getElementById('btnSiguiente').disabled = false;
+                        
+                        // Mostrar advertencia si hay hojas existentes
+                        if (resultado.hojasExistentes > 0) {
+                            document.getElementById('warningExistentes').style.display = 'block';
+                        }
+                        
+                    } else {
+                        mostrarEstado('error', resultado.message);
+                    }
+                    
+                    btnCrear.disabled = false;
+                    btnCrear.textContent = '🚀 Crear Hojas de Alumnos';
+                })
+                .withFailureHandler(function(error) {
+                    mostrarEstado('error', 'Error creando hojas: ' + error.message);
+                    btnCrear.disabled = false;
+                    btnCrear.textContent = '🚀 Crear Hojas de Alumnos';
+                })
+                .crearHojasAlumnos(claseSeleccionada, datosConfiguracion);
+        }
+
+        function abrirSelectorAlumnos() {
+            // Cerrar este modal y abrir el selector
+            google.script.run
+                .withSuccessHandler(function() {
+                    google.script.host.close();
+                })
+                .abrirSelectorAlumnos();
+        }
+
+        function mostrarEstado(tipo, mensaje) {
+            const status = document.getElementById('status');
+            status.className = `status ${tipo} show`;
+            status.textContent = mensaje;
+
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 6000);
+        }
+
+        function cerrarModal() {
+            google.script.host.close();
+        }
+
+        window.onload = inicializar;
+    </script>
+</body>
+</html>

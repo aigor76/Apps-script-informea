@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <style>
+       * { margin: 0; padding: 0; box-sizing: border-box; }
+       body { font-family: 'Google Sans', 'Segoe UI', Arial, sans-serif; background: #f8f9fa; color: #202124; height: 100vh; overflow: hidden; }
+      
+       .main-container { width: 100%; height: 100vh; display: flex; flex-direction: column; background: white; }
+      
+       .header {
+           background: linear-gradient(135deg, #ff6d01, #ff9800);
+           color: white;
+           padding: 8px 12px;
+           text-align: center;
+       }
+       .header h1 {
+           margin-bottom: 2px;
+           font-size: 1.2em;
+           font-weight: 600;
+       }
+       .header p {
+           opacity: 0.95;
+           font-size: 0.8em;
+           margin: 0;
+       }
+
+       .alumno-info {
+           background: #e8f0fe;
+           border-bottom: 1px solid #4285f4;
+           padding: 8px 12px;
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+       }
+       .alumno-info .nombre {
+           font-weight: 600;
+           color: #1a73e8;
+           font-size: 0.9em;
+       }
+       .alumno-info .volver {
+           background: rgba(26, 115, 232, 0.1);
+           color: #1a73e8;
+           border: 1px solid #4285f4;
+           border-radius: 4px;
+           padding: 4px 8px;
+           font-size: 0.7em;
+           cursor: pointer;
+           transition: all 0.2s ease;
+       }
+       .alumno-info .volver:hover {
+           background: rgba(26, 115, 232, 0.2);
+       }
+
+       .tabs {
+           display: flex;
+           background: #f1f3f4;
+           border-bottom: 1px solid #dadce0;
+       }
+       .tab {
+           flex: 1;
+           padding: 6px 12px;
+           background: none;
+           border: none;
+           cursor: pointer;
+           font-size: 0.8em;
+           font-weight: 600;
+           color: #5f6368;
+           transition: all 0.3s ease;
+           border-bottom: 2px solid transparent;
+       }
+       .tab:hover {
+           background: #e8eaed;
+           color: #202124;
+       }
+       .tab.active {
+           background: white;
+           color: #ff6d01;
+           border-bottom-color: #ff6d01;
+       }
+
+       .tab-content {
+           display: none;
+           flex: 1;
+           flex-direction: column;
+           overflow: hidden;
+       }
+       .tab-content.active {
+           display: flex;
+       }
+      
+       .content {
+           flex: 1;
+           padding: 15px;
+           display: flex;
+           flex-direction: column;
+           overflow-y: auto;
+       }
+
+       .referencia-primera {
+           background: #e3f2fd;
+           border: 1px solid #2196f3;
+           border-radius: 6px;
+           padding: 8px;
+           margin-bottom: 12px;
+           font-size: 0.75em;
+           display: none;
+       }
+       .referencia-primera h4 {
+           color: #1565c0;
+           margin-bottom: 4px;
+           font-size: 1em;
+       }
+       .referencia-primera .datos {
+           color: #1976d2;
+           line-height: 1.3;
+       }
+      
+       .criterio-card {
+           background: white;
+           border-radius: 8px;
+           padding: 12px;
+           margin-bottom: 10px;
+           box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+           border-left: 4px solid transparent;
+       }
+      
+       .criterio-card.jatea { border-left-color: #4CAF50; }
+       .criterio-card.autonomia { border-left-color: #2196F3; }
+       .criterio-card.jarrera { border-left-color: #9C27B0; }
+      
+       .criterio-header {
+           display: flex;
+           align-items: center;
+           margin-bottom: 8px;
+           gap: 8px;
+       }
+      
+       .criterio-icon {
+           width: 24px;
+           height: 24px;
+           border-radius: 50%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           font-size: 0.8em;
+           color: white;
+           font-weight: bold;
+       }
+      
+       .criterio-card.jatea .criterio-icon { background: #4CAF50; }
+       .criterio-card.autonomia .criterio-icon { background: #2196F3; }
+       .criterio-card.jarrera .criterio-icon { background: #9C27B0; }
+      
+       .criterio-title h3 {
+           color: #202124;
+           font-size: 0.9em;
+           font-weight: 600;
+           margin: 0;
+       }
+      
+       .criterio-select {
+           width: 100%;
+           padding: 6px 8px;
+           border: 1px solid #dadce0;
+           border-radius: 4px;
+           font-size: 0.75em;
+           background: white;
+           cursor: pointer;
+       }
+      
+       .criterio-select:focus {
+           outline: none;
+           border-color: #ff6d01;
+           box-shadow: 0 0 0 2px rgba(255, 109, 1, 0.1);
+       }
+      
+       .status {
+           padding: 8px 12px;
+           border-radius: 4px;
+           margin: 8px 0;
+           font-weight: 500;
+           display: none;
+           font-size: 0.8em;
+       }
+       .status.success {
+           background: #e6f4ea;
+           color: #137333;
+           border-left: 3px solid #34a853;
+       }
+       .status.error {
+           background: #fce8e6;
+           color: #d93025;
+           border-left: 3px solid #ea4335;
+       }
+      
+       .footer {
+           background: white;
+           padding: 8px 15px;
+           border-top: 1px solid #dadce0;
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           gap: 8px;
+       }
+      
+       .footer-info {
+           color: #5f6368;
+           font-size: 0.7em;
+           flex: 1;
+           line-height: 1.2;
+       }
+      
+       .button-group {
+           display: flex;
+           gap: 6px;
+       }
+      
+       .btn {
+           padding: 6px 12px;
+           border: none;
+           border-radius: 4px;
+           font-size: 0.75em;
+           font-weight: 600;
+           cursor: pointer;
+           transition: all 0.2s ease;
+           min-width: 80px;
+       }
+      
+       .btn-cancel {
+           background: #f8f9fa;
+           color: #5f6368;
+           border: 1px solid #dadce0;
+       }
+       .btn-cancel:hover {
+           background: #f1f3f4;
+           border-color: #9aa0a6;
+       }
+      
+       .btn-primary {
+           background: linear-gradient(135deg, #ff6d01, #ff9800);
+           color: white;
+           box-shadow: 0 2px 4px rgba(255, 109, 1, 0.3);
+       }
+       .btn-primary:hover {
+           background: linear-gradient(135deg, #e65c00, #f57c00);
+           box-shadow: 0 3px 6px rgba(255, 109, 1, 0.4);
+       }
+       .btn-primary:disabled {
+           background: #dadce0;
+           color: #9aa0a6;
+           cursor: not-allowed;
+           box-shadow: none;
+       }
+
+       .btn-volver {
+           background: #1a73e8;
+           color: white;
+           box-shadow: 0 2px 4px rgba(26, 115, 232, 0.3);
+       }
+       .btn-volver:hover {
+           background: #1557b3;
+           box-shadow: 0 3px 6px rgba(26, 115, 232, 0.4);
+       }
+   </style>
+</head>
+<body>
+   <div class="main-container">
+       <div class="header">
+           <h1>🏫 JANGELA - Ebaluazio sistema</h1>
+           <p>Jatea, Jarrera eta Autonomia</p>
+       </div>
+
+       <!-- Información del alumno activo -->
+       <div class="alumno-info">
+           <div class="nombre" id="nombreAlumnoActivo">
+               👤 Cargando alumno...
+           </div>
+           <button class="volver" onclick="volverASelector()">
+               ↩️ Volver al selector
+           </button>
+       </div>
+
+       <div class="tabs">
+           <button class="tab active" onclick="cambiarPestana('evaluacion1')">
+               📊 Lehen ebaluaketa
+           </button>
+           <button class="tab" onclick="cambiarPestana('evaluacion2')">
+               📈 Bigarren ebaluaketa
+           </button>
+       </div>
+
+       <!-- PRIMERA EVALUACIÓN -->
+       <div id="evaluacion1" class="tab-content active">
+           <div class="content">
+               <!-- JATEA -->
+               <div class="criterio-card jatea">
+                   <div class="criterio-header">
+                       <div class="criterio-icon">🍽️</div>
+                       <div class="criterio-title">
+                           <h3>JATEA</h3>
+                       </div>
+                   </div>
+                   <select class="criterio-select" id="jatea1">
+                       <option value="">-- Aukeratu balorazioa --</option>
+                       <option value="Oso egokia / Muy adecuado">Oso egokia / Muy adecuado</option>
+                       <option value="Egokia / Adecuado">Egokia / Adecuado</option>
+                       <option value="Aldakorra / Variable">Aldakorra / Variable</option>
+                       <option value="Hobetu behar / Necesita mejorar">Hobetu behar / Necesita mejorar</option>
+                   </select>
+               </div>
+
+               <!-- JARRERA -->
+               <div class="criterio-card jarrera">
+                   <div class="criterio-header">
+                       <div class="criterio-icon">😊</div>
+                       <div class="criterio-title">
+                           <h3>JARRERA</h3>
+                       </div>
+                   </div>
+                   <select class="criterio-select" id="jarrera1">
+                       <option value="">-- Aukeratu balorazioa --</option>
+                       <option value="Oso egokia / Muy adecuado">Oso egokia / Muy adecuado</option>
+                       <option value="Egokia / Adecuado">Egokia / Adecuado</option>
+                       <option value="Aldakorra / Variable">Aldakorra / Variable</option>
+                       <option value="Hobetu behar / Necesita mejorar">Hobetu behar / Necesita mejorar</option>
+                   </select>
+               </div>
+
+               <!-- AUTONOMIA -->
+               <div class="criterio-card autonomia">
+                   <div class="criterio-header">
+                       <div class="criterio-icon">🎯</div>
+                       <div class="criterio-title">
+                           <h3>AUTONOMIA</h3>
+                       </div>
+                   </div>
+                   <select class="criterio-select" id="autonomia1">
+                       <option value="">-- Aukeratu balorazioa --</option>
+                       <option value="Oso egokia / Muy adecuado">Oso egokia / Muy adecuado</option>
+                       <option value="Egokia / Adecuado">Egokia / Adecuado</option>
+                       <option value="Aldakorra / Variable">Aldakorra / Variable</option>
+                       <option value="Hobetu behar / Necesita mejorar">Hobetu behar / Necesita mejorar</option>
+                   </select>
+               </div>
+
+               <div class="status" id="status1"></div>
+           </div>
+
+           <div class="footer">
+               <div class="footer-info">
+                   <strong>🏫 1ª Jangela Ebaluazioa</strong><br>
+                   JATEA: AQ39 • JARRERA: AQ42 • AUTONOMIA: AQ45
+               </div>
+               <div class="button-group">
+                   <button class="btn btn-volver" onclick="volverASelector()">
+                       ↩️ Volver
+                   </button>
+                   <button class="btn btn-primary" onclick="guardarEvaluacion(1)" id="guardarBtn1" disabled>
+                       ✅ 1ª Ebal Txertatu
+                   </button>
+               </div>
+           </div>
+       </div>
+
+       <!-- SEGUNDA EVALUACIÓN -->
+       <div id="evaluacion2" class="tab-content">
+           <div class="content">
+               <!-- Referencia de primera evaluación -->
+               <div class="referencia-primera" id="referenciaPrimera">
+                   <h4>📊 1ª Ebal Erreferentzia:</h4>
+                   <div class="datos" id="datosReferencia">Kargatzen...</div>
+               </div>
+
+               <!-- JATEA -->
+               <div class="criterio-card jatea">
+                   <div class="criterio-header">
+                       <div class="criterio-icon">🍽️</div>
+                       <div class="criterio-title">
+                           <h3>JATEA</h3>
+                       </div>
+                   </div>
+                   <select class="criterio-select" id="jatea2">
+                       <option value="">-- Aukeratu balorazioa --</option>
+                       <option value="Oso egokia / Muy adecuado">Oso egokia / Muy adecuado</option>
+                       <option value="Egokia / Adecuado">Egokia / Adecuado</option>
+                       <option value="Aldakorra / Variable">Aldakorra / Variable</option>
+                       <option value="Hobetu behar / Necesita mejorar">Hobetu behar / Necesita mejorar</option>
+                   </select>
+               </div>
+
+               <!-- JARRERA -->
+               <div class="criterio-card jarrera">
+                   <div class="criterio-header">
+                       <div class="criterio-icon">😊</div>
+                       <div class="criterio-title">
+                           <h3>JARRERA</h3>
+                       </div>
+                   </div>
+                   <select class="criterio-select" id="jarrera2">
+                       <option value="">-- Aukeratu balorazioa --</option>
+                       <option value="Oso egokia / Muy adecuado">Oso egokia / Muy adecuado</option>
+                       <option value="Egokia / Adecuado">Egokia / Adecuado</option>
+                       <option value="Aldakorra / Variable">Aldakorra / Variable</option>
+                       <option value="Hobetu behar / Necesita mejorar">Hobetu behar / Necesita mejorar</option>
+                   </select>
+               </div>
+
+               <!-- AUTONOMIA -->
+               <div class="criterio-card autonomia">
+                   <div class="criterio-header">
+                       <div class="criterio-icon">🎯</div>
+                       <div class="criterio-title">
+                           <h3>AUTONOMIA</h3>
+                       </div>
+                   </div>
+                   <select class="criterio-select" id="autonomia2">
+                       <option value="">-- Aukeratu balorazioa --</option>
+                       <option value="Oso egokia / Muy adecuado">Oso egokia / Muy adecuado</option>
+                       <option value="Egokia / Adecuado">Egokia / Adecuado</option>
+                       <option value="Aldakorra / Variable">Aldakorra / Variable</option>
+                       <option value="Hobetu behar / Necesita mejorar">Hobetu behar / Necesita mejorar</option>
+                   </select>
+               </div>
+
+               <div class="status" id="status2"></div>
+           </div>
+
+           <div class="footer">
+               <div class="footer-info">
+                   <strong>🏫 2ª Jangela Ebaluazioa</strong><br>
+                   JATEA: AS39 • JARRERA: AS42 • AUTONOMIA: AS45
+               </div>
+               <div class="button-group">
+                   <button class="btn btn-volver" onclick="volverASelector()">
+                       ↩️ Volver
+                   </button>
+                   <button class="btn btn-primary" onclick="guardarEvaluacion(2)" id="guardarBtn2" disabled>
+                       ✅ 2ª Ebal Txertatu
+                   </button>
+               </div>
+           </div>
+       </div>
+   </div>
+
+   <script>
+       let alumnoActual = null;
+
+       function inicializar() {
+           console.log('🚀 Inicializando Jangela...');
+           configurarEventos();
+           cargarAlumnoActivo();
+       }
+
+       function cargarAlumnoActivo() {
+           // Obtener alumno activo
+           google.script.run
+               .withSuccessHandler(function(nombreAlumno) {
+                   if (nombreAlumno) {
+                       alumnoActual = nombreAlumno;
+                       document.getElementById('nombreAlumnoActivo').textContent = `👤 ${nombreAlumno}`;
+                       cargarDatosEvaluaciones();
+                   } else {
+                       document.getElementById('nombreAlumnoActivo').textContent = '❌ No hay alumno seleccionado';
+                       mostrarEstado(1, 'error', 'No hay alumno seleccionado');
+                   }
+               })
+               .withFailureHandler(function(error) {
+                   console.error('Error obteniendo alumno activo:', error);
+                   document.getElementById('nombreAlumnoActivo').textContent = '❌ Error al cargar alumno';
+               })
+               .obtenerAlumnoActivo();
+       }
+
+       function configurarEventos() {
+           const selects1 = ['jatea1', 'jarrera1', 'autonomia1'];
+           const selects2 = ['jatea2', 'jarrera2', 'autonomia2'];
+          
+           selects1.forEach(id => {
+               const select = document.getElementById(id);
+               if (select) {
+                   select.addEventListener('change', () => validarFormulario(1));
+               }
+           });
+          
+           selects2.forEach(id => {
+               const select = document.getElementById(id);
+               if (select) {
+                   select.addEventListener('change', () => validarFormulario(2));
+               }
+           });
+       }
+
+       function cambiarPestana(pestana) {
+           document.querySelectorAll('.tab-content').forEach(content => {
+               content.classList.remove('active');
+           });
+          
+           document.querySelectorAll('.tab').forEach(tab => {
+               tab.classList.remove('active');
+           });
+          
+           document.getElementById(pestana).classList.add('active');
+          
+           const tabs = document.querySelectorAll('.tab');
+           if (pestana === 'evaluacion1' && tabs[0]) {
+               tabs[0].classList.add('active');
+           } else if (pestana === 'evaluacion2' && tabs[1]) {
+               tabs[1].classList.add('active');
+               cargarReferenciaPrimera();
+           }
+       }
+
+       function cargarDatosEvaluaciones() {
+           // Cargar datos de evaluación 1
+           google.script.run
+               .withSuccessHandler(function(datos) {
+                   if (datos.tieneDatos) {
+                       document.getElementById('jatea1').value = datos.jatea || '';
+                       document.getElementById('jarrera1').value = datos.jarrera || '';
+                       document.getElementById('autonomia1').value = datos.autonomia || '';
+                       validarFormulario(1);
+                      
+                       // Si hay datos en 1ª evaluación, cambiar a 2ª pestaña
+                       if (datos.jatea || datos.jarrera || datos.autonomia) {
+                           cambiarPestana('evaluacion2');
+                       }
+                   }
+               })
+               .withFailureHandler(function(error) {
+                   console.log('Error cargando datos evaluación 1:', error);
+               })
+               .obtenerDatosJangela(1);
+
+           // Cargar datos de evaluación 2
+           google.script.run
+               .withSuccessHandler(function(datos) {
+                   if (datos.tieneDatos) {
+                       document.getElementById('jatea2').value = datos.jatea || '';
+                       document.getElementById('jarrera2').value = datos.jarrera || '';
+                       document.getElementById('autonomia2').value = datos.autonomia || '';
+                       validarFormulario(2);
+                   }
+               })
+               .withFailureHandler(function(error) {
+                   console.log('Error cargando datos evaluación 2:', error);
+               })
+               .obtenerDatosJangela(2);
+       }
+
+       function cargarReferenciaPrimera() {
+           google.script.run
+               .withSuccessHandler(function(datos) {
+                   const referenciaDiv = document.getElementById('referenciaPrimera');
+                   const datosDiv = document.getElementById('datosReferencia');
+                  
+                   if (datos.tieneDatos) {
+                       let mensaje = '';
+                       if (datos.jatea) mensaje += `🍽️ JATEA: ${datos.jatea} `;
+                       if (datos.jarrera) mensaje += `😊 JARRERA: ${datos.jarrera} `;
+                       if (datos.autonomia) mensaje += `🎯 AUTONOMIA: ${datos.autonomia}`;
+                      
+                       datosDiv.textContent = mensaje || 'Ez dago daturik';
+                       referenciaDiv.style.display = 'block';
+                   } else {
+                       datosDiv.textContent = 'Lehenengo ebaluaketako daturik gabe';
+                       referenciaDiv.style.display = 'block';
+                   }
+               })
+               .withFailureHandler(function(error) {
+                   console.log('Error cargando referencia:', error);
+               })
+               .obtenerDatosJangela(1);
+       }
+
+       function validarFormulario(evaluacion) {
+           const jatea = document.getElementById(`jatea${evaluacion}`).value;
+           const jarrera = document.getElementById(`jarrera${evaluacion}`).value;
+           const autonomia = document.getElementById(`autonomia${evaluacion}`).value;
+          
+           const guardarBtn = document.getElementById(`guardarBtn${evaluacion}`);
+           const algunoSeleccionado = jatea || jarrera || autonomia;
+           guardarBtn.disabled = !algunoSeleccionado;
+          
+           return algunoSeleccionado;
+       }
+
+       function guardarEvaluacion(evaluacion) {
+           if (!validarFormulario(evaluacion)) {
+               mostrarEstado(evaluacion, 'error', '⚠️ Aukeratu gutxienez irizpide bat');
+               return;
+           }
+
+           const jatea = document.getElementById(`jatea${evaluacion}`).value;
+           const jarrera = document.getElementById(`jarrera${evaluacion}`).value;
+           const autonomia = document.getElementById(`autonomia${evaluacion}`).value;
+
+           const evaluacionData = {
+               jatea: jatea,
+               jarrera: jarrera,
+               autonomia: autonomia
+           };
+
+           const guardarBtn = document.getElementById(`guardarBtn${evaluacion}`);
+           guardarBtn.disabled = true;
+           guardarBtn.textContent = '⏳ Txertatzen...';
+
+           google.script.run
+               .withSuccessHandler(function(resultado) {
+                   if (resultado.success) {
+                       mostrarEstado(evaluacion, 'success', resultado.message);
+                      
+                       if (evaluacion === 1) {
+                           setTimeout(() => {
+                               cargarReferenciaPrimera();
+                           }, 500);
+                       }
+                      
+                       // VOLVER AL SELECTOR después de 2 segundos
+                       setTimeout(() => {
+                           volverASelector();
+                       }, 2000);
+                      
+                   } else {
+                       mostrarEstado(evaluacion, 'error', resultado.message);
+                       guardarBtn.disabled = false;
+                       guardarBtn.textContent = `✅ ${evaluacion}ª Ebal Txertatu`;
+                   }
+               })
+               .withFailureHandler(function(error) {
+                   mostrarEstado(evaluacion, 'error', 'Error: ' + error.message);
+                   guardarBtn.disabled = false;
+                   guardarBtn.textContent = `✅ ${evaluacion}ª Ebal Txertatu`;
+               })
+               .insertarEvaluacionJangela(evaluacionData, evaluacion);
+       }
+
+       function volverASelector() {
+           // Cerrar este modal y abrir el selector
+           google.script.run
+               .withSuccessHandler(function() {
+                   google.script.host.close();
+               })
+               .abrirSelectorAlumnos();
+       }
+
+       function mostrarEstado(evaluacion, tipo, mensaje) {
+           const status = document.getElementById(`status${evaluacion}`);
+           if (!status) return;
+
+           status.className = `status ${tipo}`;
+           status.textContent = mensaje;
+           status.style.display = 'block';
+
+           setTimeout(() => {
+               if (status) {
+                   status.style.display = 'none';
+               }
+           }, 4000);
+       }
+
+       window.onload = inicializar;
+   </script>
+</body>
+</html>

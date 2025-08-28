@@ -23,6 +23,20 @@ function obtenerConfiguracionCompleta() {
       throw new Error('La hoja de configuración no tiene datos.');
     }
 
+    // --- Validate Headers ---
+    const requiredHeaders = [
+      'plantilla_txostena', 'celda_nombre_alumno', 'celda_nombre_tutor',
+      'celda_curso_escolar', 'celda_evaluacion', 'celda_curso',
+      'celda_jangela_jatea_1', 'celda_jangela_jarrera_1', 'celda_jangela_autonomia_1',
+      'celda_jangela_jatea_2', 'celda_jangela_jarrera_2', 'celda_jangela_autonomia_2',
+      'Nombre de hoja', 'Numero de criterios', 'Celdas que ocupa',
+      'Celda 1. evaluacion', 'Celda 2.evaluacion'
+    ];
+    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+    if (missingHeaders.length > 0) {
+      throw new Error(`Faltan las siguientes columnas en 'Hoja 1': ${missingHeaders.join(', ')}`);
+    }
+
     // --- Leer Global Settings (from the first data row) ---
     const firstDataRow = datos[1];
     const globalSettings = {
@@ -52,10 +66,6 @@ function obtenerConfiguracionCompleta() {
     const colCeldasOcupa = headers.indexOf('Celdas que ocupa');
     const colCelda1Eval = headers.indexOf('Celda 1. evaluacion');
     const colCelda2Eval = headers.indexOf('Celda 2.evaluacion');
-
-    if ([colNombreHoja, colNumeroCriterios, colCeldasOcupa, colCelda1Eval, colCelda2Eval].includes(-1)) {
-      throw new Error('No se encontraron todas las columnas de ámbitos necesarias en la Hoja 1');
-    }
 
     const scopes = [];
     for (let i = 1; i < datos.length; i++) {

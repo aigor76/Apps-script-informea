@@ -166,6 +166,10 @@
         </div>
     </div>
 
+    <script>
+        // Pass the server-side data to a global JavaScript variable.
+        var C_CONFIGURACION = <?= configuracion ?>;
+    </script>
     <?!= HtmlService.createHtmlOutputFromFile('_modal.js.html').getContent(); ?>
 </body>
 </html>

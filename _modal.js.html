@@ -7,10 +7,9 @@
 
     function inicializar() {
         try {
-            const configuracionString = '<?= configuracion ?>';
-
-            if (configuracionString && configuracionString !== 'undefined' && configuracionString !== '') {
-                configuraciones = JSON.parse(configuracionString);
+            // Data is now passed via a global variable C_CONFIGURACION from the main HTML file.
+            if (typeof C_CONFIGURACION !== 'undefined' && C_CONFIGURACION) {
+                configuraciones = C_CONFIGURACION;
                 llenarSelectorAmbitos();
             } else {
                 mostrarEstado(1, 'error', 'No se encontró configuración de ámbitos en la Hoja 1');
@@ -75,6 +74,9 @@
             return;
         }
 
+        // --- OPTIMIZATION: Use pre-loaded criteria ---
+        criteriosData = configuracionActual.criterios || [];
+
         try {
             const headerSubtitle = document.getElementById('headerSubtitle');
             const maxCriterios1 = document.getElementById('maxCriterios1');
@@ -92,7 +94,11 @@
 
             actualizarFooterInfo();
             limpiarDatos();
-            cargarCriteriosAmbito();
+
+            renderizarCriterios(1);
+            renderizarCriterios(2);
+            cargarDatosPrimeraEvaluacion(); // This still needs a server call to get student-specific data
+
             actualizarBotonesNavegacion();
 
         } catch (error) {
@@ -181,92 +187,75 @@
         `;
     }
 
-    function cargarCriteriosAmbito() {
-        if (!configuracionActual) return;
-
-        const loadingIndicator = document.getElementById('ambitoLoading');
-        const loading1 = document.getElementById('loading1');
-        const loading2 = document.getElementById('loading2');
-
-        if (loadingIndicator) {
-            loadingIndicator.classList.add('show');
+    function cargarDatosPrimeraEvaluacion() {
+        if (!configuracionActual) {
+            document.getElementById('referenciaPrimera').textContent = 'Aukeratu esparrua...';
+            return;
         }
 
-        if (loading1) {
-            loading1.textContent = `🔄 Itemak kargatzen ${configuracionActual.nombreHoja}...`;
-            loading1.style.display = 'block';
+        const referenciaDiv = document.getElementById('referenciaPrimera');
+        if (referenciaDiv) {
+            referenciaDiv.innerHTML = '🔄 Datuak kargtzen...';
+        } else {
+            return;
         }
 
-        if (loading2) {
-            loading2.textContent = `🔄 Itemak kargatzen ${configuracionActual.nombreHoja}...`;
-            loading2.style.display = 'block';
-        }
-
-        google.script.run
-            .withSuccessHandler(function(criterios) {
-                if (loadingIndicator) {
-                    loadingIndicator.classList.remove('show');
-                }
-                if (loading1) {
-                    loading1.style.display = 'none';
-                }
-                if (loading2) {
-                    loading2.style.display = 'none';
-                }
-
-                if (!criterios || criterios.length === 0) {
-                    mostrarEstado(1, 'error', `No se encontraron criterios en la hoja "${configuracionActual.nombreHoja}"`);
-                    mostrarEstado(2, 'error', `No se encontraron criterios en la hoja "${configuracionActual.nombreHoja}"`);
-                } else {
-                    criteriosData = criterios;
-                    renderizarCriterios(1);
-                    renderizarCriterios(2);
-                    cargarDatosPrimeraEvaluacion();
-
-                    // NUEVA FUNCIONALIDAD: Verificar si hay datos de 1ª evaluación para saltar a 2ª pestaña
-                    verificarYSaltarPestana();
-                }
-            })
-            .withFailureHandler(function(error) {
-                if (loadingIndicator) {
-                    loadingIndicator.classList.remove('show');
-                }
-                if (loading1) {
-                    loading1.style.display = 'none';
-                }
-                if (loading2) {
-                    loading2.style.display = 'none';
-                }
-
-                const mensajeError = error.message || error.toString();
-                mostrarEstado(1, 'error', `Errore kargatzen "${configuracionActual.nombreHoja}": ${mensajeError}`);
-                mostrarEstado(2, 'error', `Errorea kargatzen "${configuracionActual.nombreHoja}": ${mensajeError}`);
-            })
-            .cargarTodosLosCriterios(configuracionActual.nombreHoja, configuracionActual.numeroCriterios);
-    }
-
-    function verificarYSaltarPestana() {
-        if (!configuracionActual) return;
-
-        // Verificar si hay datos de 1ª evaluación
         google.script.run
             .withSuccessHandler(function(datos) {
-                // Si hay nota en 1ª evaluación, saltar automáticamente a 2ª pestaña
-                if (datos && datos.tieneDatos && datos.nota && datos.nota.trim() !== '') {
-                    console.log('🎯 1ª evaluación completada detectada, saltando a 2ª pestaña');
-                    cambiarPestana('evaluacion2');
-                } else {
-                    console.log('ℹ️ No hay datos de 1ª evaluación, permaneciendo en 1ª pestaña');
-                    // Asegurar que esté en 1ª pestaña si no hay datos
-                    const pestana1Activa = document.getElementById('evaluacion1').classList.contains('active');
-                    if (!pestana1Activa) {
-                        cambiarPestana('evaluacion1');
-                    }
+                const referenciaDiv = document.getElementById('referenciaPrimera');
+
+                if (!referenciaDiv) {
+                    return;
                 }
+
+                setTimeout(() => {
+                    try {
+                        let mensaje = '';
+
+                        if (datos && typeof datos === 'object') {
+                            if (datos.tieneDatos) {
+                                // MOSTRAR NOTA (sin HTML tags)
+                                if (datos.nota && datos.nota.trim() !== '') {
+                                    mensaje += `📝 Kalifikazioa: ${datos.nota}`;
+                                }
+
+                                // MOSTRAR TODOS LOS CRITERIOS HORIZONTALMENTE (sin HTML tags)
+                                if (datos.criterios && Array.isArray(datos.criterios) && datos.criterios.length > 0) {
+                                    if (mensaje) mensaje += ' | ';
+                                    mensaje += `📋 Itemak (${datos.criterios.length}): `;
+
+                                    // Mostrar criterios separados por " • " horizontalmente
+                                    mensaje += datos.criterios.join(' • ');
+                                }
+
+                                if (mensaje) {
+                                    referenciaDiv.textContent = mensaje;
+                                } else {
+                                    referenciaDiv.textContent = '📝 Datuak aurkitu dira baina hutsik daude';
+                                }
+
+                                // Auto-jump to 2nd tab if 1st eval is complete
+                                if (datos.nota && datos.nota.trim() !== '') {
+                                    cambiarPestana('evaluacion2');
+                                }
+                            } else {
+                                referenciaDiv.textContent = '📝 Lehenengo ebaluaketako daturik gabe';
+                            }
+                        } else {
+                            referenciaDiv.textContent = '❌ Datos inválidos recibidos';
+                        }
+
+                    } catch (error) {
+                        console.error('❌ Error procesando datos:', error);
+                        referenciaDiv.textContent = '❌ Error procesando datos';
+                    }
+                }, 500);
             })
             .withFailureHandler(function(error) {
-                console.log('ℹ️ Error verificando 1ª evaluación, permaneciendo en pestaña actual:', error);
-                // En caso de error, no hacer nada (mantener pestaña actual)
+                const referenciaDiv = document.getElementById('referenciaPrimera');
+                if (referenciaDiv) {
+                    referenciaDiv.innerHTML = '❌ Error al cargar referencia: ' + error.message;
+                }
             })
             .obtenerDatosPrimera(configuracionActual);
     }
@@ -320,74 +309,6 @@
         if (pestana === 'evaluacion2' && configuracionActual) {
             cargarDatosPrimeraEvaluacion();
         }
-    }
-
-    function cargarDatosPrimeraEvaluacion() {
-        if (!configuracionActual) {
-            document.getElementById('referenciaPrimera').textContent = 'Aukeratu esparrua...';
-            return;
-        }
-
-        const referenciaDiv = document.getElementById('referenciaPrimera');
-        if (referenciaDiv) {
-            referenciaDiv.innerHTML = '🔄 Datuak kargtzen...';
-        } else {
-            return;
-        }
-
-        google.script.run
-            .withSuccessHandler(function(datos) {
-                const referenciaDiv = document.getElementById('referenciaPrimera');
-
-                if (!referenciaDiv) {
-                    return;
-                }
-
-                setTimeout(() => {
-                    try {
-                        let mensaje = '';
-
-                        if (datos && typeof datos === 'object') {
-                            if (datos.tieneDatos) {
-                                // MOSTRAR NOTA (sin HTML tags)
-                                if (datos.nota && datos.nota.trim() !== '') {
-                                    mensaje += `📝 Kalifikazioa: ${datos.nota}`;
-                                }
-
-                                // MOSTRAR TODOS LOS CRITERIOS HORIZONTALMENTE (sin HTML tags)
-                                if (datos.criterios && Array.isArray(datos.criterios) && datos.criterios.length > 0) {
-                                    if (mensaje) mensaje += ' | ';
-                                    mensaje += `📋 Itemak (${datos.criterios.length}): `;
-
-                                    // Mostrar criterios separados por " • " horizontalmente
-                                    mensaje += datos.criterios.join(' • ');
-                                }
-
-                                if (mensaje) {
-                                    referenciaDiv.textContent = mensaje;
-                                } else {
-                                    referenciaDiv.textContent = '📝 Datuak aurkitu dira baina hutsik daude';
-                                }
-                            } else {
-                                referenciaDiv.textContent = '📝 Lehenengo ebaluaketako daturik gabe';
-                            }
-                        } else {
-                            referenciaDiv.textContent = '❌ Datos inválidos recibidos';
-                        }
-
-                    } catch (error) {
-                        console.error('❌ Error procesando datos:', error);
-                        referenciaDiv.textContent = '❌ Error procesando datos';
-                    }
-                }, 500);
-            })
-            .withFailureHandler(function(error) {
-                const referenciaDiv = document.getElementById('referenciaPrimera');
-                if (referenciaDiv) {
-                    referenciaDiv.innerHTML = '❌ Error al cargar referencia: ' + error.message;
-                }
-            })
-            .obtenerDatosPrimera(configuracionActual);
     }
 
     function renderizarCriterios(evaluacion) {

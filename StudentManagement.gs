@@ -121,6 +121,7 @@ function limpiarNombresDuplicados(nombres) {
  */
 function crearHojasAlumnos(nombreClase, datosConfiguracion) {
   try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const config = obtenerConfiguracionCompleta();
     const hojaPlantilla = spreadsheet.getSheetByName(config.globalSettings.plantillaTxostena);
 
@@ -209,6 +210,7 @@ function obtenerAlumnosConEstado() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const sheets = spreadsheet.getSheets();
     const alumnos = [];
+    const config = obtenerConfiguracionCompleta(); // Fetch config once
 
     // Buscar solo hojas VISIBLES que no sean las principales
     sheets.forEach(sheet => {
@@ -227,7 +229,7 @@ function obtenerAlumnosConEstado() {
       }
 
       console.log(`Procesando hoja de alumno: ${nombre}`);
-      const estado = analizarEstadoAlumno(sheet);
+      const estado = analizarEstadoAlumno(sheet, config.scopes); // Pass config to function
       alumnos.push({
         nombre: nombre,
         estado: estado.estado,
@@ -280,12 +282,10 @@ function esHojaDelSistema(nombreHoja) {
 /**
  * Analizar el estado de progreso de un alumno (OPTIMIZADO - SOLO NOTAS)
  */
-function analizarEstadoAlumno(hojaAlumno) {
+function analizarEstadoAlumno(hojaAlumno, configuracion) { // Accept config as parameter
   try {
     console.log(`\n🔍 ANALIZANDO ALUMNO: ${hojaAlumno.getName()}`);
 
-    // Obtener configuración de ámbitos UNA sola vez
-    const configuracion = obtenerConfiguracionAmbitos();
     if (!configuracion || configuracion.length === 0) {
       console.log('❌ No hay configuración de ámbitos');
       return {

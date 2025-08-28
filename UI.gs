@@ -55,15 +55,21 @@ function abrirModalCriterios() {
   }
 
   // Obtener configuración de la Hoja 1
-  const configuracion = obtenerConfiguracionAmbitos();
-  if (!configuracion || configuracion.length === 0) {
+  const scopes = obtenerConfiguracionAmbitos();
+  if (!scopes || scopes.length === 0) {
     SpreadsheetApp.getUi().alert('No se encontró configuración válida en la Hoja 1');
     return;
   }
 
+  // Pre-load all criteria for all scopes
+  const configuracionConCriterios = scopes.map(scope => {
+    const criterios = cargarTodosLosCriterios(scope.nombreHoja, scope.numeroCriterios);
+    return { ...scope, criterios: criterios };
+  });
+
   const html = HtmlService.createTemplateFromFile('_modal');
-  // Pasar la configuración al modal
-  html.configuracion = JSON.stringify(configuracion);
+  // Pasar la configuración con los criterios pre-cargados al modal
+  html.configuracion = JSON.stringify(configuracionConCriterios);
   const htmlOutput = html.evaluate()
     .setWidth(1300)
     .setHeight(750)
